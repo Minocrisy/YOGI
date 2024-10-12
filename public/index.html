@@ -5,104 +5,112 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>YOGI - Your Own Generative Interface</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
-    <header>
-        <h1>YOGI</h1>
-        <nav>
-            <ul class="tabs">
-                <li><a href="#chat" class="tab active" data-tab="chat">Chat</a></li>
-                <li><a href="#image-generation" class="tab" data-tab="image-generation">Image Generation</a></li>
-                <li><a href="#vision" class="tab" data-tab="vision">Vision</a></li>
-                <li><a href="#video-generation" class="tab" data-tab="video-generation">Video Generation</a></li>
-                <li><a href="#audio-generation" class="tab" data-tab="audio-generation">Audio Generation</a></li>
-                <li><a href="#notion-integration" class="tab" data-tab="notion-integration">Notion Integration</a></li>
-                <li><a href="#api-management" class="tab" data-tab="api-management">API Management</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <section id="chat" class="tab-content active">
-            <div class="controls">
-                <select class="model-select" data-type="text"></select>
-            </div>
-            <div id="chat-messages"></div>
-            <div class="input-container">
-                <textarea class="user-input" placeholder="Enter your message here..."></textarea>
-                <button class="send-button">Send</button>
-            </div>
-        </section>
-        
-        <section id="image-generation" class="tab-content">
-            <div class="controls">
-                <select class="model-select" data-type="image"></select>
-            </div>
-            <div id="image-result"></div>
-            <div class="input-container">
-                <textarea class="user-input" placeholder="Describe the image you want to generate..."></textarea>
-                <button class="send-button">Generate</button>
-            </div>
-        </section>
-        
-        <section id="vision" class="tab-content">
-            <div class="controls">
-                <select class="model-select" data-type="vision"></select>
-            </div>
-            <div id="vision-result"></div>
-            <div class="input-container">
-                <input type="file" class="file-input" accept="image/*">
-                <textarea class="user-input" placeholder="Enter your question about the image..."></textarea>
-                <button class="send-button">Analyze</button>
-            </div>
-        </section>
-        
-        <section id="video-generation" class="tab-content">
-            <div class="controls">
-                <select class="model-select" data-type="video"></select>
-            </div>
-            <div id="video-result"></div>
-            <div class="input-container">
-                <textarea class="user-input" placeholder="Describe the video you want to generate..."></textarea>
-                <button class="send-button">Generate</button>
-            </div>
-        </section>
-        
-        <section id="audio-generation" class="tab-content">
-            <div class="controls">
-                <select class="model-select" data-type="audio"></select>
-            </div>
-            <div id="audio-result"></div>
-            <div class="input-container">
-                <textarea class="user-input" placeholder="Describe the audio you want to generate..."></textarea>
-                <button class="send-button">Generate</button>
-            </div>
-        </section>
-        
-        <section id="notion-integration" class="tab-content">
-            <h2>Notion Integration</h2>
-            <p>Sync your YOGI data with Notion:</p>
-            <button id="sync-notion">Sync with Notion</button>
-            <div id="notion-status"></div>
-        </section>
-        
-        <section id="api-management" class="tab-content">
-            <h2>API Management</h2>
-            <div id="api-keys">
-                <h3>API Keys</h3>
-                <div id="api-keys-list"></div>
-                <button id="add-api-key">Add New API Key</button>
-            </div>
-            <div id="models">
-                <h3>Models</h3>
-                <div id="models-list"></div>
-                <button id="add-model">Add New Model</button>
-            </div>
-            <div id="usage-tracking">
-                <h3>Usage Tracking</h3>
-                <div id="usage-stats"></div>
-            </div>
-        </section>
-    </main>
+    <div class="app-container">
+        <aside class="sidebar">
+            <h1>YOGI</h1>
+            <nav>
+                <ul class="tabs">
+                    <li><a href="#chat" class="tab active" data-tab="chat"><i class="fas fa-comments"></i> Chat</a></li>
+                    <li><a href="#image-generation" class="tab" data-tab="image-generation"><i class="fas fa-image"></i> Image Generation</a></li>
+                    <li><a href="#vision" class="tab" data-tab="vision"><i class="fas fa-eye"></i> Vision</a></li>
+                    <li><a href="#video-generation" class="tab" data-tab="video-generation"><i class="fas fa-video"></i> Video Generation</a></li>
+                    <li><a href="#audio-generation" class="tab" data-tab="audio-generation"><i class="fas fa-music"></i> Audio Generation</a></li>
+                    <li><a href="#notion-integration" class="tab" data-tab="notion-integration"><i class="fas fa-book"></i> Notion Integration</a></li>
+                    <li><a href="#api-management" class="tab" data-tab="api-management"><i class="fas fa-cogs"></i> API Management</a></li>
+                </ul>
+            </nav>
+        </aside>
+        <main class="main-content">
+            <section id="chat" class="tab-content active">
+                <div class="controls">
+                    <select class="model-select" data-type="text"></select>
+                </div>
+                <div id="chat-messages"></div>
+                <div class="input-container">
+                    <textarea class="user-input" placeholder="Enter your message here..."></textarea>
+                    <div class="input-options">
+                        <button class="option-button file-upload" title="Upload File"><i class="fas fa-paperclip"></i></button>
+                        <button class="option-button image-upload" title="Upload Image"><i class="fas fa-image"></i></button>
+                        <button class="option-button voice-input" title="Voice Input"><i class="fas fa-microphone"></i></button>
+                    </div>
+                    <button class="send-button">Send</button>
+                </div>
+            </section>
+            
+            <section id="image-generation" class="tab-content">
+                <div class="controls">
+                    <select class="model-select" data-type="image"></select>
+                </div>
+                <div id="image-result"></div>
+                <div class="input-container">
+                    <textarea class="user-input" placeholder="Describe the image you want to generate..."></textarea>
+                    <button class="send-button">Generate</button>
+                </div>
+            </section>
+            
+            <section id="vision" class="tab-content">
+                <div class="controls">
+                    <select class="model-select" data-type="vision"></select>
+                </div>
+                <div id="vision-result"></div>
+                <div class="input-container">
+                    <input type="file" class="file-input" accept="image/*">
+                    <textarea class="user-input" placeholder="Enter your question about the image..."></textarea>
+                    <button class="send-button">Analyze</button>
+                </div>
+            </section>
+            
+            <section id="video-generation" class="tab-content">
+                <div class="controls">
+                    <select class="model-select" data-type="video"></select>
+                </div>
+                <div id="video-result"></div>
+                <div class="input-container">
+                    <textarea class="user-input" placeholder="Describe the video you want to generate..."></textarea>
+                    <button class="send-button">Generate</button>
+                </div>
+            </section>
+            
+            <section id="audio-generation" class="tab-content">
+                <div class="controls">
+                    <select class="model-select" data-type="audio"></select>
+                </div>
+                <div id="audio-result"></div>
+                <div class="input-container">
+                    <textarea class="user-input" placeholder="Describe the audio you want to generate..."></textarea>
+                    <button class="send-button">Generate</button>
+                </div>
+            </section>
+            
+            <section id="notion-integration" class="tab-content">
+                <h2>Notion Integration</h2>
+                <p>Sync your YOGI data with Notion:</p>
+                <button id="sync-notion">Sync with Notion</button>
+                <div id="notion-status"></div>
+            </section>
+            
+            <section id="api-management" class="tab-content">
+                <h2>API Management</h2>
+                <div id="api-keys">
+                    <h3>API Keys</h3>
+                    <div id="api-keys-list"></div>
+                    <button id="add-api-key">Add New API Key</button>
+                </div>
+                <div id="models">
+                    <h3>Models</h3>
+                    <div id="models-list"></div>
+                    <button id="add-model">Add New Model</button>
+                </div>
+                <div id="usage-tracking">
+                    <h3>Usage Tracking</h3>
+                    <div id="usage-stats"></div>
+                </div>
+            </section>
+        </main>
+    </div>
     <footer>
         <p>&copy; 2024 YOGI. All rights reserved.</p>
     </footer>

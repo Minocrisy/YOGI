@@ -7,6 +7,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const syncNotionBtn = document.getElementById('sync-notion');
     const notionStatus = document.getElementById('notion-status');
 
+    // New elements for file/image upload and voice input
+    const fileUploadBtn = document.querySelector('.file-upload');
+    const imageUploadBtn = document.querySelector('.image-upload');
+    const voiceInputBtn = document.querySelector('.voice-input');
+
     // Vision tab elements
     const visionFileInput = document.querySelector('#vision .file-input');
     const visionAnalyzeButton = document.querySelector('#vision .send-button');
@@ -57,6 +62,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // File upload functionality
+    fileUploadBtn.addEventListener('click', () => {
+        const fileInput = document.createElement('input');
+        fileInput.type = 'file';
+        fileInput.accept = '.txt,.pdf,.doc,.docx';
+        fileInput.onchange = handleFileUpload;
+        fileInput.click();
+    });
+
+    // Image upload functionality
+    imageUploadBtn.addEventListener('click', () => {
+        const imageInput = document.createElement('input');
+        imageInput.type = 'file';
+        imageInput.accept = 'image/*';
+        imageInput.onchange = handleImageUpload;
+        imageInput.click();
+    });
+
+    // Voice input functionality
+    voiceInputBtn.addEventListener('click', handleVoiceInput);
+
     // Vision tab event listeners
     visionAnalyzeButton.addEventListener('click', (e) => {
         e.preventDefault();
@@ -84,6 +110,68 @@ document.addEventListener('DOMContentLoaded', () => {
                     break;
             }
             userInput.value = '';
+        }
+    }
+
+    async function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const content = e.target.result;
+                const chatMessages = document.querySelector('#chat-messages');
+                addMessageToChat(chatMessages, 'User', `Uploaded file: ${file.name}`);
+                await sendChatMessage(`File content: ${content}`, document.querySelector('#chat'));
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    async function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const chatMessages = document.querySelector('#chat-messages');
+                addMessageToChat(chatMessages, 'User', `Uploaded image: ${file.name}`);
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.style.maxWidth = '200px';
+                img.style.maxHeight = '200px';
+                chatMessages.lastElementChild.appendChild(img);
+                await sendChatMessage(`[Image uploaded: ${file.name}]`, document.querySelector('#chat'));
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function handleVoiceInput() {
+        if ('webkitSpeechRecognition' in window) {
+            const recognition = new webkitSpeechRecognition();
+            recognition.continuous = false;
+            recognition.interimResults = false;
+
+            recognition.onstart = () => {
+                voiceInputBtn.textContent = 'Listening...';
+            };
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                document.querySelector('#chat .user-input').value = transcript;
+            };
+
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error', event.error);
+                voiceInputBtn.textContent = 'Voice Input';
+            };
+
+            recognition.onend = () => {
+                voiceInputBtn.textContent = 'Voice Input';
+            };
+
+            recognition.start();
+        } else {
+            alert('Speech recognition is not supported in your browser.');
         }
     }
 
@@ -252,6 +340,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadApiKeys() {
         try {
             const response = await fetch('/api/keys');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const keys = await response.json();
             apiKeysList.innerHTML = keys.map(key => `
                 <div>
@@ -261,17 +352,22 @@ document.addEventListener('DOMContentLoaded', () => {
             `).join('');
         } catch (error) {
             console.error('Error loading API keys:', error);
+            apiKeysList.innerHTML = '<p>Error loading API keys. Please try refreshing the page.</p>';
         }
     }
 
     async function loadModels() {
         try {
             const response = await fetch('/api/models');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             availableModels = await response.json();
             updateModelSelects();
             updateModelsList();
         } catch (error) {
             console.error('Error loading models:', error);
+            modelsList.innerHTML = '<p>Error loading models. Please try refreshing the page.</p>';
         }
     }
 
@@ -299,14 +395,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const value = prompt('Enter the API key:');
         if (name && value) {
             try {
-                await fetch('/api/keys', {
+                const response = await fetch('/api/keys', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, value })
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 loadApiKeys();
             } catch (error) {
                 console.error('Error adding API key:', error);
+                alert('Failed to add API key. Please try again.');
             }
         }
     }
@@ -314,10 +414,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function removeApiKey(id) {
         if (confirm('Are you sure you want to remove this API key?')) {
             try {
-                await fetch(`/api/keys/${id}`, { method: 'DELETE' });
+                const response = await fetch(`/api/keys/${id}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 loadApiKeys();
             } catch (error) {
                 console.error('Error removing API key:', error);
+                alert('Failed to remove API key. Please try again.');
             }
         }
     }
@@ -328,14 +432,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const provider = prompt('Enter the provider name:');
         if (name && type && provider) {
             try {
-                await fetch('/api/models', {
+                const response = await fetch('/api/models', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ name, type, provider })
                 });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 loadModels();
             } catch (error) {
                 console.error('Error adding model:', error);
+                alert('Failed to add model. Please try again.');
             }
         }
     }
@@ -343,10 +451,14 @@ document.addEventListener('DOMContentLoaded', () => {
     async function removeModel(id) {
         if (confirm('Are you sure you want to remove this model?')) {
             try {
-                await fetch(`/api/models/${id}`, { method: 'DELETE' });
+                const response = await fetch(`/api/models/${id}`, { method: 'DELETE' });
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
                 loadModels();
             } catch (error) {
                 console.error('Error removing model:', error);
+                alert('Failed to remove model. Please try again.');
             }
         }
     }
@@ -354,6 +466,9 @@ document.addEventListener('DOMContentLoaded', () => {
     async function loadUsageStats() {
         try {
             const response = await fetch('/api/usage');
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const stats = await response.json();
             usageStats.innerHTML = `
                 <p>Total API Calls: ${stats.totalCalls}</p>
@@ -367,6 +482,7 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         } catch (error) {
             console.error('Error loading usage stats:', error);
+            usageStats.innerHTML = '<p>Error loading usage stats. Please try refreshing the page.</p>';
         }
     }
 

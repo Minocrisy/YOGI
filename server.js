@@ -59,40 +59,54 @@ app.get('/', (req, res) => {
 
 // API Keys
 app.get('/api/keys', (req, res) => {
+  console.log('GET /api/keys - Sending API keys');
   res.json(apiKeys.map(key => ({ id: key.id, name: key.name, value: '****' + key.value.slice(-4) })));
 });
 
 app.post('/api/keys', async (req, res) => {
+  console.log('POST /api/keys - Adding new API key');
   const { name, value } = req.body;
   const id = `${name.toUpperCase()}_API_KEY`;
   const newKey = { id, name, value };
   apiKeys.push(newKey);
   
-  // Update .env file
-  await fs.appendFile('.env', `\n${id}=${value}`);
-  
-  res.status(201).json({ id: newKey.id, name: newKey.name });
+  try {
+    // Update .env file
+    await fs.appendFile('.env', `\n${id}=${value}`);
+    console.log('API key added successfully');
+    res.status(201).json({ id: newKey.id, name: newKey.name });
+  } catch (error) {
+    console.error('Error adding API key:', error);
+    res.status(500).json({ error: 'Failed to add API key' });
+  }
 });
 
 app.delete('/api/keys/:id', async (req, res) => {
+  console.log(`DELETE /api/keys/${req.params.id} - Removing API key`);
   const { id } = req.params;
   apiKeys = apiKeys.filter(key => key.id !== id);
   
-  // Update .env file
-  const envContent = await fs.readFile('.env', 'utf-8');
-  const updatedContent = envContent.split('\n').filter(line => !line.startsWith(`${id}=`)).join('\n');
-  await fs.writeFile('.env', updatedContent);
-  
-  res.sendStatus(204);
+  try {
+    // Update .env file
+    const envContent = await fs.readFile('.env', 'utf-8');
+    const updatedContent = envContent.split('\n').filter(line => !line.startsWith(`${id}=`)).join('\n');
+    await fs.writeFile('.env', updatedContent);
+    console.log('API key removed successfully');
+    res.sendStatus(204);
+  } catch (error) {
+    console.error('Error removing API key:', error);
+    res.status(500).json({ error: 'Failed to remove API key' });
+  }
 });
 
 // Models
 app.get('/api/models', (req, res) => {
-  console.log('Sending models:', models);
+  console.log('GET /api/models - Sending models');
   res.json(models);
 });
 
 app.post('/api/models', (req, res) => {
+  console.log('POST /api/models - Adding new model');
   const { name, type, provider } = req.body;
   const newModel = { id: Date.now().toString(), name, type, provider };
   models.push(newModel);
@@ -100,6 +114,7 @@ app.post('/api/models', (req, res) => {
 });
 
 app.delete('/api/models/:id', (req, res) => {
+  console.log(`DELETE /api/models/${req.params.id} - Removing model`);
   const { id } = req.params;
   models = models.filter(model => model.id !== id);
   res.sendStatus(204);
@@ -107,6 +122,7 @@ app.delete('/api/models/:id', (req, res) => {
 
 // Usage Stats
 app.get('/api/usage', (req, res) => {
+  console.log('GET /api/usage - Sending usage stats');
   res.json(usageStats);
 });
 
@@ -119,6 +135,7 @@ function updateUsageStats(model, cost) {
 
 // Chat route
 app.post('/api/chat', async (req, res) => {
+  console.log('POST /api/chat - Processing chat request');
   const { message, modelId } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
@@ -159,6 +176,7 @@ app.post('/api/chat', async (req, res) => {
 
 // Image generation route
 app.post('/api/generate-image', async (req, res) => {
+  console.log('POST /api/generate-image - Processing image generation request');
   const { prompt, modelId } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
@@ -196,7 +214,7 @@ app.post('/api/generate-image', async (req, res) => {
 
 // Vision analysis route
 app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
-  console.log('Vision analysis request received');
+  console.log('POST /api/analyze-vision - Processing vision analysis request');
   try {
     console.log('Request body:', req.body);
     console.log('Request file:', req.file);
@@ -262,6 +280,7 @@ app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
 
 // Video generation route (placeholder)
 app.post('/api/generate-video', async (req, res) => {
+  console.log('POST /api/generate-video - Processing video generation request');
   const { prompt, modelId } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
@@ -279,6 +298,7 @@ app.post('/api/generate-video', async (req, res) => {
 
 // Audio generation route (placeholder)
 app.post('/api/generate-audio', async (req, res) => {
+  console.log('POST /api/generate-audio - Processing audio generation request');
   const { prompt, modelId } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
@@ -296,6 +316,7 @@ app.post('/api/generate-audio', async (req, res) => {
 
 // Notion sync route
 app.post('/api/sync-notion', async (req, res) => {
+  console.log('POST /api/sync-notion - Processing Notion sync request');
   try {
     // Here you would implement the actual Notion synchronization logic
     // For now, we'll just return a success message
@@ -309,6 +330,7 @@ app.post('/api/sync-notion', async (req, res) => {
 
 // New Notion command route
 app.post('/api/notion-command', async (req, res) => {
+  console.log('POST /api/notion-command - Processing Notion command request');
   const { command } = req.body;
   try {
     // Here you would implement the logic to handle different Notion commands
