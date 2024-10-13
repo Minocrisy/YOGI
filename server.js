@@ -6,15 +6,14 @@ const multer = require('multer');
 const { Client } = require('@notionhq/client');
 const { Groq } = require('groq-sdk');
 const { HfInference } = require('@huggingface/inference');
+const OpenAI = require('openai');
+const Anthropic = require('@anthropic-ai/sdk');
+const axios = require('axios');
 require('dotenv').config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
-
-// Initialize clients
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+const DEFAULT_PORT = 3000;
+let PORT = process.env.PORT || DEFAULT_PORT;
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
@@ -27,21 +26,22 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Initialize storage from .env
-let apiKeys = Object.entries(process.env)
-  .filter(([key]) => key.endsWith('_API_KEY'))
-  .map(([key, value]) => ({
-    id: key,
-    name: key.replace('_API_KEY', ''),
-    value: value
-  }));
+// Initialize clients
+const notion = new Client({ auth: process.env.NOTION_API_KEY });
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY,
+});
 
-// Default models
+// Initialize models
 let models = [
   { id: 'groq-mixtral', name: 'Groq Mixtral', type: 'text', provider: 'groq' },
   { id: 'hf-flux', name: 'Hugging Face FLUX', type: 'image', provider: 'huggingface' },
-  { id: 'meta-llama/Llama-3.2-11B-Vision-Instruct', name: 'Llama 3.2 Vision', type: 'vision', provider: 'huggingface' },
-  { id: 'openai-gpt4', name: 'OpenAI GPT-4', type: 'text', provider: 'openai' },
+  { id: 'salesforce/blip-image-captioning-large', name: 'BLIP Image Captioning', type: 'vision', provider: 'huggingface' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o-mini Vision', type: 'vision', provider: 'openai' },
+  { id: 'gpt-4o-mini', name: 'GPT-4o-mini', type: 'text', provider: 'openai' },
   { id: 'openai-dalle3', name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' },
   { id: 'mistral-large', name: 'Mistral Large', type: 'text', provider: 'mistral' },
   { id: 'elevenlabs-tts', name: 'ElevenLabs TTS', type: 'audio', provider: 'elevenlabs' },
@@ -49,60 +49,19 @@ let models = [
   { id: 'placeholder-video', name: 'Placeholder Video Model', type: 'video', provider: 'placeholder' },
 ];
 
+// Initialize usage stats
 let usageStats = { totalCalls: 0, totalCost: 0, byModel: {} };
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
-// API Management Routes
-
-// API Keys
-app.get('/api/keys', (req, res) => {
-  console.log('GET /api/keys - Sending API keys');
-  res.json(apiKeys.map(key => ({ id: key.id, name: key.name, value: '****' + key.value.slice(-4) })));
-});
-
-app.post('/api/keys', async (req, res) => {
-  console.log('POST /api/keys - Adding new API key');
-  const { name, value } = req.body;
-  const id = `${name.toUpperCase()}_API_KEY`;
-  const newKey = { id, name, value };
-  apiKeys.push(newKey);
-  
-  try {
-    // Update .env file
-    await fs.appendFile('.env', `\n${id}=${value}`);
-    console.log('API key added successfully');
-    res.status(201).json({ id: newKey.id, name: newKey.name });
-  } catch (error) {
-    console.error('Error adding API key:', error);
-    res.status(500).json({ error: 'Failed to add API key' });
-  }
-});
-
-app.delete('/api/keys/:id', async (req, res) => {
-  console.log(`DELETE /api/keys/${req.params.id} - Removing API key`);
-  const { id } = req.params;
-  apiKeys = apiKeys.filter(key => key.id !== id);
-  
-  try {
-    // Update .env file
-    const envContent = await fs.readFile('.env', 'utf-8');
-    const updatedContent = envContent.split('\n').filter(line => !line.startsWith(`${id}=`)).join('\n');
-    await fs.writeFile('.env', updatedContent);
-    console.log('API key removed successfully');
-    res.sendStatus(204);
-  } catch (error) {
-    console.error('Error removing API key:', error);
-    res.status(500).json({ error: 'Failed to remove API key' });
-  }
-});
-
-// Models
+// API routes
 app.get('/api/models', (req, res) => {
   console.log('GET /api/models - Sending models');
-  res.json(models);
+  console.log('Models:', JSON.stringify(models, null, 2));
+  try {
+    res.json(models);
+  } catch (error) {
+    console.error('Error sending models:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
 
 app.post('/api/models', (req, res) => {
@@ -120,95 +79,65 @@ app.delete('/api/models/:id', (req, res) => {
   res.sendStatus(204);
 });
 
-// Usage Stats
-app.get('/api/usage', (req, res) => {
-  console.log('GET /api/usage - Sending usage stats');
-  res.json(usageStats);
-});
-
-// Helper function to update usage stats
-function updateUsageStats(model, cost) {
-  usageStats.totalCalls++;
-  usageStats.totalCost += cost;
-  usageStats.byModel[model] = (usageStats.byModel[model] || 0) + 1;
-}
-
 // Chat route
 app.post('/api/chat', async (req, res) => {
   console.log('POST /api/chat - Processing chat request');
   const { message, modelId } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
-    if (!model || model.type !== 'text') {
+    if (!model) {
       return res.status(400).json({ error: 'Invalid model selected for chat' });
     }
 
     let response;
     let cost = 0;
 
-    if (model.provider === 'groq') {
-      try {
+    switch (model.provider) {
+      case 'groq':
         const completion = await groq.chat.completions.create({
           messages: [{ role: "user", content: message }],
           model: "mixtral-8x7b-32768",
         });
         response = completion.choices[0]?.message?.content || 'No response generated';
         cost = 0.01; // Example cost
-      } catch (error) {
-        if (error.status === 503) {
-          return res.status(503).json({ error: 'Groq service is currently unavailable. Please try again later.' });
-        }
-        throw error; // Re-throw if it's not a 503 error
-      }
-    } else {
-      // Placeholder for other providers
-      response = `Chat response from ${model.name} (${model.provider}) - Not yet implemented`;
-      cost = 0.01; // Example cost
+        break;
+      case 'openai':
+        const openaiResponse = await openai.chat.completions.create({
+          model: "gpt-4o-mini", // Using gpt-4o-mini as specified
+          messages: [{ role: "user", content: message }],
+          max_tokens: 300,
+        });
+        response = openaiResponse.choices[0].message.content;
+        cost = 0.03; // Example cost
+        break;
+      case 'anthropic':
+        const anthropicResponse = await anthropic.completions.create({
+          model: "claude-2",
+          prompt: message,
+          max_tokens_to_sample: 300,
+        });
+        response = anthropicResponse.completion;
+        cost = 0.02; // Example cost
+        break;
+      case 'mistral':
+        // Implement Mistral API call here
+        response = `Chat response from ${model.name} (${model.provider}) - Not yet implemented`;
+        cost = 0.01; // Example cost
+        break;
+      default:
+        response = `Chat response from ${model.name} (${model.provider}) - Not yet implemented`;
+        cost = 0.01; // Example cost
     }
 
-    updateUsageStats(model.name, cost);
+    // Update usage stats
+    usageStats.totalCalls++;
+    usageStats.totalCost += cost;
+    usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
+
     res.json({ response, cost });
   } catch (error) {
     console.error('Error in chat:', error);
-    res.status(500).json({ error: 'Failed to generate response. Please try again later.' });
-  }
-});
-
-// Image generation route
-app.post('/api/generate-image', async (req, res) => {
-  console.log('POST /api/generate-image - Processing image generation request');
-  const { prompt, modelId } = req.body;
-  try {
-    const model = models.find(m => m.id === modelId);
-    if (!model || model.type !== 'image') {
-      return res.status(400).json({ error: 'Invalid model selected for image generation' });
-    }
-
-    let imageUrl;
-    let cost = 0;
-
-    if (model.provider === 'huggingface') {
-      const response = await hf.textToImage({
-        inputs: prompt,
-        model: "black-forest-labs/FLUX.1-dev",
-      });
-
-      // Convert the blob to base64
-      const buffer = await response.arrayBuffer();
-      const base64 = Buffer.from(buffer).toString('base64');
-      imageUrl = `data:image/jpeg;base64,${base64}`;
-      cost = 0.02; // Example cost
-    } else {
-      // Placeholder for other providers
-      imageUrl = 'https://via.placeholder.com/512x512.png?text=Image+Generation+Not+Implemented';
-      cost = 0.02; // Example cost
-    }
-
-    updateUsageStats(model.name, cost);
-    res.json({ imageUrl, cost });
-  } catch (error) {
-    console.error('Error generating image:', error);
-    res.status(500).json({ error: 'Failed to generate image' });
+    res.status(500).json({ error: 'Failed to generate response', details: error.message });
   }
 });
 
@@ -216,139 +145,102 @@ app.post('/api/generate-image', async (req, res) => {
 app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
   console.log('POST /api/analyze-vision - Processing vision analysis request');
   try {
-    console.log('Request body:', req.body);
-    console.log('Request file:', req.file);
-
     if (!req.file) {
-      console.error('No file uploaded');
       return res.status(400).json({ error: 'No image file uploaded' });
     }
 
     const { question, modelId } = req.body;
 
     if (!question) {
-      console.error('No question provided');
       return res.status(400).json({ error: 'No question provided' });
     }
 
-    console.log('Question:', question);
-    console.log('Model ID:', modelId);
-
-    const imagePath = req.file.path;
-    console.log('Image saved at:', imagePath);
-
     const model = models.find(m => m.id === modelId);
     if (!model || model.type !== 'vision') {
-      console.error('Invalid model selected:', modelId);
       return res.status(400).json({ error: 'Invalid model selected for vision analysis' });
     }
+
+    const imagePath = req.file.path;
+    const imageBuffer = await fs.readFile(imagePath);
+    const base64Image = imageBuffer.toString('base64');
 
     let result;
     let cost = 0;
 
-    if (model.provider === 'huggingface') {
-      console.log('Using Hugging Face for vision analysis');
-      const image = await fs.readFile(imagePath);
-      const response = await hf.visualQuestionAnswering({
-        model: "meta-llama/Llama-3.2-11B-Vision-Instruct",
-        inputs: {
-          image: image,
-          question: question,
-        },
-      });
-      result = response.answer;
-      cost = 0.05; // Example cost
-      console.log('Vision analysis result:', result);
-    } else {
-      // Placeholder for other providers
-      console.log('Using placeholder for vision analysis');
-      result = `Vision analysis from ${model.name} (${model.provider}) - Not yet implemented`;
-      cost = 0.05; // Example cost
+    switch (model.provider) {
+      case 'huggingface':
+        try {
+          const response = await hf.imageToText({
+            model: "salesforce/blip-image-captioning-large",
+            data: imageBuffer,
+          });
+          result = `Image caption: ${response.generated_text}\n\nQuestion: ${question}\n\nUnfortunately, I can't answer specific questions about the image content. I can only provide a general caption of what I see in the image.`;
+          cost = 0.05; // Example cost
+        } catch (error) {
+          console.error('Hugging Face API error:', error);
+          throw new Error('Failed to analyze image with Hugging Face API');
+        }
+        break;
+
+      case 'openai':
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: question },
+                  {
+                    type: "image_url",
+                    image_url: {
+                      url: `data:image/jpeg;base64,${base64Image}`,
+                    },
+                  },
+                ],
+              },
+            ],
+            max_tokens: 300,
+          });
+          result = response.choices[0].message.content;
+          cost = 0.1; // Example cost
+        } catch (error) {
+          console.error('OpenAI API error:', error);
+          throw new Error('Failed to analyze image with OpenAI API');
+        }
+        break;
+
+      default:
+        throw new Error('Vision analysis not implemented for this provider');
     }
 
-    updateUsageStats(model.name, cost);
+    // Update usage stats
+    usageStats.totalCalls++;
+    usageStats.totalCost += cost;
+    usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
+
     res.json({ result, cost });
 
     // Clean up the uploaded file
     await fs.unlink(imagePath);
-    console.log('Temporary image file deleted');
   } catch (error) {
     console.error('Error in vision analysis:', error);
-    res.status(500).json({ error: 'Failed to analyze image. Please try again later.', details: error.message });
+    res.status(500).json({ error: 'Failed to analyze image', details: error.message });
   }
 });
 
-// Video generation route (placeholder)
-app.post('/api/generate-video', async (req, res) => {
-  console.log('POST /api/generate-video - Processing video generation request');
-  const { prompt, modelId } = req.body;
-  try {
-    const model = models.find(m => m.id === modelId);
-    if (!model || model.type !== 'video') {
-      return res.status(400).json({ error: 'Invalid model selected for video generation' });
-    }
-
-    // Placeholder response
-    res.json({ message: 'Video generation is not yet implemented.' });
-  } catch (error) {
-    console.error('Error generating video:', error);
-    res.status(500).json({ error: 'Failed to generate video' });
-  }
-});
-
-// Audio generation route (placeholder)
-app.post('/api/generate-audio', async (req, res) => {
-  console.log('POST /api/generate-audio - Processing audio generation request');
-  const { prompt, modelId } = req.body;
-  try {
-    const model = models.find(m => m.id === modelId);
-    if (!model || model.type !== 'audio') {
-      return res.status(400).json({ error: 'Invalid model selected for audio generation' });
-    }
-
-    // Placeholder response
-    res.json({ message: 'Audio generation is not yet implemented.' });
-  } catch (error) {
-    console.error('Error generating audio:', error);
-    res.status(500).json({ error: 'Failed to generate audio' });
-  }
-});
-
-// Notion sync route
-app.post('/api/sync-notion', async (req, res) => {
-  console.log('POST /api/sync-notion - Processing Notion sync request');
-  try {
-    // Here you would implement the actual Notion synchronization logic
-    // For now, we'll just return a success message
-    await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate some work
-    res.json({ message: 'Successfully synced with Notion' });
-  } catch (error) {
-    console.error('Error syncing with Notion:', error);
-    res.status(500).json({ error: 'Failed to sync with Notion' });
-  }
-});
-
-// New Notion command route
-app.post('/api/notion-command', async (req, res) => {
-  console.log('POST /api/notion-command - Processing Notion command request');
-  const { command } = req.body;
-  try {
-    // Here you would implement the logic to handle different Notion commands
-    // For now, we'll just return a success message
-    let result;
-    if (command.startsWith('https://www.notion.so/')) {
-      result = 'Fetched Notion page content';
+function startServer(port) {
+  app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+    console.log(`Uploads directory: ${uploadsDir}`);
+  }).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+      console.log(`Port ${port} is busy, trying the next one...`);
+      startServer(port + 1);
     } else {
-      result = 'Executed Notion command';
+      console.error('Error starting server:', err);
     }
-    res.json({ message: result });
-  } catch (error) {
-    console.error('Error executing Notion command:', error);
-    res.status(500).json({ error: 'Failed to execute Notion command' });
-  }
-});
+  });
+}
 
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Uploads directory: ${uploadsDir}`);
-});
+startServer(PORT);
