@@ -2,7 +2,7 @@ export function initApiKeyModule() {
     const apiKeysList = document.getElementById('api-keys-list');
     const addApiKeyBtn = document.getElementById('add-api-key');
 
-    addApiKeyBtn.addEventListener('click', addApiKey);
+    addApiKeyBtn.addEventListener('click', () => addApiKey());
 
     async function loadApiKeys() {
         try {
@@ -17,15 +17,26 @@ export function initApiKeyModule() {
                     <button onclick="removeApiKey('${key.id}')">Remove</button>
                 </div>
             `).join('');
+
+            // Check for required API keys
+            const requiredKeys = ['Mistral AI', 'Anthropic', 'OpenAI', 'Groq', 'HuggingFace', 'ElevenLabs'];
+            for (const requiredKey of requiredKeys) {
+                if (!keys.some(key => key.name === requiredKey)) {
+                    const shouldAdd = confirm(`${requiredKey} API key is missing. Would you like to add it now?`);
+                    if (shouldAdd) {
+                        await addApiKey(requiredKey);
+                    }
+                }
+            }
         } catch (error) {
             console.error('Error loading API keys:', error);
             apiKeysList.innerHTML = '<p>Error loading API keys. Please try refreshing the page.</p>';
         }
     }
 
-    async function addApiKey() {
-        const name = prompt('Enter a name for the API key:');
-        const value = prompt('Enter the API key:');
+    async function addApiKey(suggestedName = '') {
+        const name = suggestedName || prompt('Enter a name for the API key:');
+        const value = prompt(`Enter the API key for ${name}:`);
         if (name && value) {
             try {
                 const response = await fetch('/api/keys', {
@@ -36,7 +47,7 @@ export function initApiKeyModule() {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                loadApiKeys();
+                await loadApiKeys();
             } catch (error) {
                 console.error('Error adding API key:', error);
                 alert('Failed to add API key. Please try again.');
@@ -51,7 +62,7 @@ export function initApiKeyModule() {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                loadApiKeys();
+                await loadApiKeys();
             } catch (error) {
                 console.error('Error removing API key:', error);
                 alert('Failed to remove API key. Please try again.');
