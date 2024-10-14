@@ -37,7 +37,13 @@ export function initImageGenerationModule() {
             const data = await response.json();
 
             if (data.imageUrl) {
-                imageResult.innerHTML = `<img src="${data.imageUrl}" alt="Generated Image">`;
+                const modelName = imageModelSelect.options[imageModelSelect.selectedIndex].text;
+                imageResult.innerHTML = `
+                    <img src="${data.imageUrl}" alt="Generated Image">
+                    <p>Generated using ${modelName}</p>
+                    <p>Prompt: ${prompt}</p>
+                    <p>Cost: $${data.cost.toFixed(2)}</p>
+                `;
             } else {
                 throw new Error('No image URL in the response');
             }

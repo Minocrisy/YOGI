@@ -19,7 +19,24 @@ export function initApiKeyModule() {
             `).join('');
 
             // Check for required API keys
-            const requiredKeys = ['Mistral AI', 'Anthropic', 'OpenAI', 'Groq', 'HuggingFace', 'ElevenLabs'];
+            const requiredKeys = ['Anthropic', 'Groq', 'HuggingFace', 'ElevenLabs'];
+            const textGenerationKeys = ['Mistral AI', 'OpenAI'];
+            
+            // First, check for Mistral AI or OpenAI
+            const hasTextGenerationKey = keys.some(key => textGenerationKeys.includes(key.name));
+            if (!hasTextGenerationKey) {
+                const shouldAddMistral = confirm(`Mistral AI API key is missing. Would you like to add it now?`);
+                if (shouldAddMistral) {
+                    await addApiKey('Mistral AI');
+                } else {
+                    const shouldAddOpenAI = confirm(`OpenAI API key is missing. Would you like to add it now?`);
+                    if (shouldAddOpenAI) {
+                        await addApiKey('OpenAI');
+                    }
+                }
+            }
+
+            // Then check for other required keys
             for (const requiredKey of requiredKeys) {
                 if (!keys.some(key => key.name === requiredKey)) {
                     const shouldAdd = confirm(`${requiredKey} API key is missing. Would you like to add it now?`);

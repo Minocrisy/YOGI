@@ -8,6 +8,7 @@ const { Groq } = require('groq-sdk');
 const { HfInference } = require('@huggingface/inference');
 const OpenAI = require('openai');
 const axios = require('axios');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 const app = express();
@@ -24,12 +25,41 @@ const upload = multer({ dest: uploadsDir });
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadsDir));
+
+// Initialize API keys
+let apiKeys = [
+  { id: 'notion', name: 'Notion', value: process.env.NOTION_API_KEY },
+  { id: 'groq', name: 'Groq', value: process.env.GROQ_API_KEY },
+  { id: 'huggingface', name: 'HuggingFace', value: process.env.HUGGINGFACE_API_KEY },
+  { id: 'openai', name: 'OpenAI', value: process.env.OPENAI_API_KEY },
+  { id: 'gemini', name: 'Gemini', value: process.env.GEMINI_API_KEY },
+  { id: 'mistral', name: 'Mistral AI', value: process.env.MISTRAL_API_KEY },
+  { id: 'anthropic', name: 'Anthropic', value: process.env.ANTHROPIC_API_KEY },
+  { id: 'elevenlabs', name: 'ElevenLabs', value: process.env.ELEVENLABS_API_KEY },
+];
+
+// Helper function to get API key
+function getApiKey(name) {
+  const key = apiKeys.find(k => k.name === name);
+  return key ? key.value : null;
+}
 
 // Initialize clients
-const notion = new Client({ auth: process.env.NOTION_API_KEY });
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
-const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+let notion = new Client({ auth: getApiKey('Notion') });
+let groq = new Groq({ apiKey: getApiKey('Groq') });
+let hf = new HfInference(getApiKey('HuggingFace'));
+let openai = new OpenAI({ apiKey: getApiKey('OpenAI') });
+let genai = new GoogleGenerativeAI(getApiKey('Gemini'));
+
+// Function to update API clients
+function updateApiClients() {
+  notion = new Client({ auth: getApiKey('Notion') });
+  groq = new Groq({ apiKey: getApiKey('Groq') });
+  hf = new HfInference(getApiKey('HuggingFace'));
+  openai = new OpenAI({ apiKey: getApiKey('OpenAI') });
+  genai = new GoogleGenerativeAI(getApiKey('Gemini'));
+}
 
 // Initialize models
 let models = [
@@ -44,26 +74,39 @@ let models = [
   { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', type: 'text', provider: 'anthropic' },
   { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', type: 'text', provider: 'anthropic' },
   { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', type: 'text', provider: 'anthropic' },
+  { id: 'imagen-3', name: 'Imagen 3', type: 'image', provider: 'google' },
   { id: 'placeholder-video', name: 'Placeholder Video Model', type: 'video', provider: 'placeholder' },
 ];
 
 // Initialize usage stats
 let usageStats = { totalCalls: 0, totalCost: 0, byModel: {} };
 
-// API routes
+// API Key routes
+app.get('/api/keys', (req, res) => {
+  res.json(apiKeys.map(key => ({ id: key.id, name: key.name })));
+});
+
+app.post('/api/keys', (req, res) => {
+  const { name, value } = req.body;
+  const newKey = { id: Date.now().toString(), name, value };
+  apiKeys.push(newKey);
+  updateApiClients();
+  res.status(201).json({ id: newKey.id, name: newKey.name });
+});
+
+app.delete('/api/keys/:id', (req, res) => {
+  const { id } = req.params;
+  apiKeys = apiKeys.filter(key => key.id !== id);
+  updateApiClients();
+  res.sendStatus(204);
+});
+
+// Model routes
 app.get('/api/models', (req, res) => {
-  console.log('GET /api/models - Sending models');
-  console.log('Models:', JSON.stringify(models, null, 2));
-  try {
-    res.json(models);
-  } catch (error) {
-    console.error('Error sending models:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  res.json(models);
 });
 
 app.post('/api/models', (req, res) => {
-  console.log('POST /api/models - Adding new model');
   const { name, type, provider } = req.body;
   const newModel = { id: Date.now().toString(), name, type, provider };
   models.push(newModel);
@@ -71,7 +114,6 @@ app.post('/api/models', (req, res) => {
 });
 
 app.delete('/api/models/:id', (req, res) => {
-  console.log(`DELETE /api/models/${req.params.id} - Removing model`);
   const { id } = req.params;
   models = models.filter(model => model.id !== id);
   res.sendStatus(204);
@@ -79,7 +121,6 @@ app.delete('/api/models/:id', (req, res) => {
 
 // Chat route
 app.post('/api/chat', async (req, res) => {
-  console.log('POST /api/chat - Processing chat request');
   const { message, modelId } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
@@ -101,7 +142,7 @@ app.post('/api/chat', async (req, res) => {
         break;
       case 'openai':
         const openaiResponse = await openai.chat.completions.create({
-          model: "gpt-4o-mini", // Using gpt-4o-mini as specified
+          model: "gpt-4o-mini",
           messages: [{ role: "user", content: message }],
           max_tokens: 300,
         });
@@ -115,7 +156,7 @@ app.post('/api/chat', async (req, res) => {
           messages: [{ role: "user", content: message }]
         }, {
           headers: {
-            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'x-api-key': getApiKey('Anthropic'),
             'anthropic-version': '2023-06-01',
             'content-type': 'application/json'
           }
@@ -130,7 +171,7 @@ app.post('/api/chat', async (req, res) => {
           max_tokens: 300
         }, {
           headers: {
-            'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+            'Authorization': `Bearer ${getApiKey('Mistral AI')}`,
             'Content-Type': 'application/json'
           }
         });
@@ -154,77 +195,90 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Vision analysis route
-app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
-  console.log('POST /api/analyze-vision - Processing vision analysis request');
+// Image Generation route
+app.post('/api/generate-image', async (req, res) => {
+  const { prompt, modelId } = req.body;
   try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No image file uploaded' });
-    }
-
-    const { question, modelId } = req.body;
-
-    if (!question) {
-      return res.status(400).json({ error: 'No question provided' });
-    }
-
     const model = models.find(m => m.id === modelId);
-    if (!model || model.type !== 'vision') {
-      return res.status(400).json({ error: 'Invalid model selected for vision analysis' });
+    if (!model || model.type !== 'image') {
+      return res.status(400).json({ error: 'Invalid model selected for image generation' });
     }
 
-    const imagePath = req.file.path;
-    const imageBuffer = await fs.readFile(imagePath);
-    const base64Image = imageBuffer.toString('base64');
-
-    let result;
+    let imageUrl;
     let cost = 0;
 
     switch (model.provider) {
       case 'huggingface':
         try {
-          const response = await hf.imageToText({
-            model: "salesforce/blip-image-captioning-large",
-            data: imageBuffer,
+          console.log('Attempting to generate image with Hugging Face API');
+          console.log('Prompt:', prompt);
+          console.log('Model:', model.id);
+          
+          const hfResponse = await hf.textToImage({
+            inputs: prompt,
+            model: "stabilityai/stable-diffusion-xl-base-1.0",
+            parameters: {
+              negative_prompt: "blurry, bad",
+              guidance_scale: 7.5,
+            },
           });
-          result = `Image caption: ${response.generated_text}\n\nQuestion: ${question}\n\nUnfortunately, I can't answer specific questions about the image content. I can only provide a general caption of what I see in the image.`;
+          
+          console.log('Hugging Face API response received');
+          const buffer = Buffer.from(await hfResponse.arrayBuffer());
+          const fileName = `${Date.now()}.png`;
+          const filePath = path.join(uploadsDir, fileName);
+          await fs.writeFile(filePath, buffer);
+          imageUrl = `/uploads/${fileName}`;
           cost = 0.05; // Example cost
+          console.log('Image saved successfully:', imageUrl);
         } catch (error) {
           console.error('Hugging Face API error:', error);
-          throw new Error('Failed to analyze image with Hugging Face API');
+          console.error('Error details:', error.response ? error.response.data : 'No additional details');
+          return res.status(500).json({ error: 'Failed to generate image with Hugging Face API', details: error.message });
         }
         break;
-
       case 'openai':
         try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [
-              {
-                role: "user",
-                content: [
-                  { type: "text", text: question },
-                  {
-                    type: "image_url",
-                    image_url: {
-                      url: `data:image/jpeg;base64,${base64Image}`,
-                    },
-                  },
-                ],
-              },
-            ],
-            max_tokens: 300,
+          const openaiResponse = await openai.images.generate({
+            model: "dall-e-3",
+            prompt: prompt,
+            n: 1,
+            size: "1024x1024",
           });
-          result = response.choices[0].message.content;
+          imageUrl = openaiResponse.data[0].url;
           cost = 0.1; // Example cost
         } catch (error) {
           console.error('OpenAI API error:', error);
-          throw new Error('Failed to analyze image with OpenAI API');
+          return res.status(500).json({ error: 'Failed to generate image with OpenAI API', details: error.message });
         }
         break;
-
+      case 'google':
+        try {
+          const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const result = await model.generateContent(prompt);
+          const response = await result.response;
+          if (response.candidates && response.candidates[0].content && response.candidates[0].content.parts) {
+            const imagePart = response.candidates[0].content.parts.find(part => part.inlineData && part.inlineData.mimeType.startsWith('image/'));
+            if (imagePart) {
+              const imageBuffer = Buffer.from(imagePart.inlineData.data, 'base64');
+              const fileName = `${Date.now()}.png`;
+              const filePath = path.join(uploadsDir, fileName);
+              await fs.writeFile(filePath, imageBuffer);
+              imageUrl = `/uploads/${fileName}`;
+              cost = 0.08; // Example cost
+            } else {
+              throw new Error('No image data found in the response');
+            }
+          } else {
+            throw new Error('Unexpected response format from Gemini API');
+          }
+        } catch (error) {
+          console.error('Google Gemini API error:', error);
+          return res.status(500).json({ error: 'Failed to generate image with Google Gemini API', details: error.message });
+        }
+        break;
       default:
-        throw new Error('Vision analysis not implemented for this provider');
+        return res.status(501).json({ error: 'Image generation not implemented for this provider' });
     }
 
     // Update usage stats
@@ -232,14 +286,16 @@ app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
     usageStats.totalCost += cost;
     usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
 
-    res.json({ result, cost });
-
-    // Clean up the uploaded file
-    await fs.unlink(imagePath);
+    res.json({ imageUrl, cost });
   } catch (error) {
-    console.error('Error in vision analysis:', error);
-    res.status(500).json({ error: 'Failed to analyze image', details: error.message });
+    console.error('Error in image generation:', error);
+    res.status(500).json({ error: 'Failed to generate image', details: error.message });
   }
+});
+
+// Usage stats route
+app.get('/api/usage-stats', (req, res) => {
+  res.json(usageStats);
 });
 
 function startServer(port) {

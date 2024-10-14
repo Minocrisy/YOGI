@@ -19,7 +19,10 @@ export function initModelModule() {
                 { name: 'Mistral Large', type: 'text', provider: 'Mistral AI' },
                 { name: 'Claude 3 Haiku', type: 'text', provider: 'Anthropic' },
                 { name: 'Claude 3.5 Sonnet', type: 'text', provider: 'Anthropic' },
-                { name: 'Claude 3 Opus', type: 'text', provider: 'Anthropic' }
+                { name: 'Claude 3 Opus', type: 'text', provider: 'Anthropic' },
+                { name: 'Hugging Face FLUX', type: 'image', provider: 'huggingface' },
+                { name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' },
+                { name: 'Imagen 3', type: 'image', provider: 'google' }
             ];
 
             for (const defaultModel of defaultModels) {
