@@ -7,7 +7,6 @@ const { Client } = require('@notionhq/client');
 const { Groq } = require('groq-sdk');
 const { HfInference } = require('@huggingface/inference');
 const OpenAI = require('openai');
-const Anthropic = require('@anthropic-ai/sdk');
 const axios = require('axios');
 require('dotenv').config();
 
@@ -31,9 +30,6 @@ const notion = new Client({ auth: process.env.NOTION_API_KEY });
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-});
 
 // Initialize models
 let models = [
@@ -45,7 +41,9 @@ let models = [
   { id: 'openai-dalle3', name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' },
   { id: 'mistral-large', name: 'Mistral Large', type: 'text', provider: 'mistral' },
   { id: 'elevenlabs-tts', name: 'ElevenLabs TTS', type: 'audio', provider: 'elevenlabs' },
-  { id: 'anthropic-claude', name: 'Anthropic Claude', type: 'text', provider: 'anthropic' },
+  { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', type: 'text', provider: 'anthropic' },
+  { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', type: 'text', provider: 'anthropic' },
+  { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', type: 'text', provider: 'anthropic' },
   { id: 'placeholder-video', name: 'Placeholder Video Model', type: 'video', provider: 'placeholder' },
 ];
 
@@ -111,17 +109,32 @@ app.post('/api/chat', async (req, res) => {
         cost = 0.03; // Example cost
         break;
       case 'anthropic':
-        const anthropicResponse = await anthropic.completions.create({
-          model: "claude-2",
-          prompt: message,
-          max_tokens_to_sample: 300,
+        const anthropicResponse = await axios.post('https://api.anthropic.com/v1/messages', {
+          model: model.id,
+          max_tokens: 1024,
+          messages: [{ role: "user", content: message }]
+        }, {
+          headers: {
+            'x-api-key': process.env.ANTHROPIC_API_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json'
+          }
         });
-        response = anthropicResponse.completion;
+        response = anthropicResponse.data.content[0].text;
         cost = 0.02; // Example cost
         break;
       case 'mistral':
-        // Implement Mistral API call here
-        response = `Chat response from ${model.name} (${model.provider}) - Not yet implemented`;
+        const mistralResponse = await axios.post('https://api.mistral.ai/v1/chat/completions', {
+          model: "mistral-large-latest",
+          messages: [{ role: "user", content: message }],
+          max_tokens: 300
+        }, {
+          headers: {
+            'Authorization': `Bearer ${process.env.MISTRAL_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        response = mistralResponse.data.choices[0].message.content;
         cost = 0.01; // Example cost
         break;
       default:

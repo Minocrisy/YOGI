@@ -13,6 +13,21 @@ export function initModelModule() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             availableModels = await response.json();
+
+            // Check and add default models if they don't exist
+            const defaultModels = [
+                { name: 'Mistral Large', type: 'text', provider: 'Mistral AI' },
+                { name: 'Claude 3 Haiku', type: 'text', provider: 'Anthropic' },
+                { name: 'Claude 3.5 Sonnet', type: 'text', provider: 'Anthropic' },
+                { name: 'Claude 3 Opus', type: 'text', provider: 'Anthropic' }
+            ];
+
+            for (const defaultModel of defaultModels) {
+                if (!availableModels.some(model => model.name === defaultModel.name)) {
+                    await addModel(defaultModel.name, defaultModel.type, defaultModel.provider);
+                }
+            }
+
             updateModelSelects();
             updateModelsList();
         } catch (error) {
@@ -40,10 +55,12 @@ export function initModelModule() {
         `).join('');
     }
 
-    async function addModel() {
-        const name = prompt('Enter a name for the model:');
-        const type = prompt('Enter the model type (text, image, video, audio, or vision):');
-        const provider = prompt('Enter the provider name:');
+    async function addModel(name, type, provider) {
+        if (!name || !type || !provider) {
+            name = prompt('Enter a name for the model:');
+            type = prompt('Enter the model type (text, image, video, audio, or vision):');
+            provider = prompt('Enter the provider name:');
+        }
         if (name && type && provider) {
             try {
                 const response = await fetch('/api/models', {
@@ -54,7 +71,7 @@ export function initModelModule() {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                loadModels();
+                await loadModels();
             } catch (error) {
                 console.error('Error adding model:', error);
                 alert('Failed to add model. Please try again.');
@@ -69,7 +86,7 @@ export function initModelModule() {
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                loadModels();
+                await loadModels();
             } catch (error) {
                 console.error('Error removing model:', error);
                 alert('Failed to remove model. Please try again.');
