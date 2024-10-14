@@ -5,7 +5,7 @@ YOGI is a web-based application that integrates various AI models and services, 
 ## Features
 
 - Chat interface with multiple AI model support (OpenAI, Anthropic, Groq, Mistral)
-- Image generation using various AI models
+- Image generation using various AI models (Hugging Face, OpenAI DALL-E 3, Google Gemini)
 - Vision analysis (upload an image and ask questions about it)
 - Notion integration for data synchronization
 - API key management for various AI services
@@ -16,8 +16,10 @@ YOGI is a web-based application that integrates various AI models and services, 
 
 - Implemented chat functionality with support for multiple AI providers
 - Updated model selection to dynamically populate available models
+- Improved image generation capabilities, including integration with Google Gemini for enhanced prompts
 - Added detailed logging for troubleshooting
 - Improved error handling and user feedback
+- Refactored API key management for better security and flexibility
 
 ## Setup
 
@@ -39,7 +41,7 @@ YOGI is a web-based application that integrates various AI models and services, 
    - HUGGINGFACE_API_KEY
    - ELEVENLABS_API_KEY
    - NOTION_API_KEY
-   - NOTION_DATABASE_ID
+   - GEMINI_API_KEY
 
 4. Start the server:
    ```
@@ -52,7 +54,7 @@ YOGI is a web-based application that integrates various AI models and services, 
 
 1. **Chat**: Select a model from the dropdown and start chatting. The application supports various AI models for text generation.
 
-2. **Image Generation**: Choose an image generation model, provide a prompt, and generate images.
+2. **Image Generation**: Choose an image generation model (Hugging Face, DALL-E 3, or Google Gemini), provide a prompt, and generate images.
 
 3. **Vision Analysis**: Upload an image, select a vision model, and ask questions about the image content.
 
@@ -85,5 +87,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Acknowledgments
 
-- OpenAI, Anthropic, Groq, Mistral, and other AI providers for their APIs
+- OpenAI, Anthropic, Groq, Mistral, Google, and other AI providers for their APIs
 - The open-source community for various libraries and tools used in this project
