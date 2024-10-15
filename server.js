@@ -358,6 +358,81 @@ app.post('/api/generate-video', async (req, res) => {
   }
 });
 
+// Audio Generation route
+app.post('/api/generate-audio', async (req, res) => {
+  const { prompt, modelId } = req.body;
+  try {
+    const model = models.find(m => m.id === modelId);
+    if (!model || model.type !== 'audio') {
+      return res.status(400).json({ error: 'Invalid model selected for audio generation' });
+    }
+
+    let audioUrl;
+    let cost = 0;
+
+    if (model.provider === 'elevenlabs') {
+      try {
+        console.log('Attempting to generate audio with ElevenLabs API');
+        console.log('Prompt:', prompt);
+        console.log('Model:', model.id);
+
+        const elevenLabsResponse = await axios.post(
+          'https://api.elevenlabs.io/v1/text-to-speech/21m00Tcm4TlvDq8ikWAM',
+          {
+            text: prompt,
+            model_id: "eleven_monolingual_v1",
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.5
+            }
+          },
+          {
+            headers: {
+              'Accept': 'audio/mpeg',
+              'xi-api-key': getApiKey('ElevenLabs'),
+              'Content-Type': 'application/json'
+            },
+            responseType: 'arraybuffer'
+          }
+        );
+
+        console.log('ElevenLabs API response received');
+        const buffer = Buffer.from(elevenLabsResponse.data);
+        const fileName = `${Date.now()}.mp3`;
+        const filePath = path.join(uploadsDir, fileName);
+        await fs.writeFile(filePath, buffer);
+        audioUrl = `/uploads/${fileName}`;
+        cost = 0.05; // Example cost, adjust as needed
+        console.log('Audio saved successfully:', audioUrl);
+      } catch (error) {
+        console.error('ElevenLabs API error:', error);
+        let errorMessage = 'Unknown error occurred';
+        if (error.response) {
+          if (error.response.data instanceof Buffer) {
+            errorMessage = error.response.data.toString('utf8');
+          } else {
+            errorMessage = JSON.stringify(error.response.data);
+          }
+        }
+        console.error('Error details:', errorMessage);
+        return res.status(500).json({ error: 'Failed to generate audio with ElevenLabs API', details: errorMessage });
+      }
+    } else {
+      return res.status(501).json({ error: 'Audio generation not implemented for this provider' });
+    }
+
+    // Update usage stats
+    usageStats.totalCalls++;
+    usageStats.totalCost += cost;
+    usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
+
+    res.json({ audioUrl, cost });
+  } catch (error) {
+    console.error('Error in audio generation:', error);
+    res.status(500).json({ error: 'Failed to generate audio', details: error.message });
+  }
+});
+
 // Usage stats route
 app.get('/api/usage-stats', (req, res) => {
   res.json(usageStats);
