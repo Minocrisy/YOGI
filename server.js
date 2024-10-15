@@ -120,17 +120,44 @@ app.delete('/api/models/:id', (req, res) => {
 });
 
 // Chat route
-app.post('/api/chat', async (req, res) => {
-  const { message, modelId } = req.body;
+app.post('/api/chat', upload.single('file'), async (req, res) => {
+  const { modelId, type } = req.body;
   try {
     const model = models.find(m => m.id === modelId);
     if (!model) {
       return res.status(400).json({ error: 'Invalid model selected for chat' });
     }
 
+    let message;
     let response;
     let cost = 0;
 
+    // Process input based on type
+    switch (type) {
+      case 'text':
+        message = req.body.message;
+        break;
+      case 'file':
+      case 'image':
+        if (!req.file) {
+          return res.status(400).json({ error: 'No file uploaded' });
+        }
+        const fileContent = await fs.readFile(req.file.path, 'utf8');
+        message = `File content: ${fileContent}`;
+        break;
+      case 'audio':
+        if (!req.file) {
+          return res.status(400).json({ error: 'No audio file uploaded' });
+        }
+        // Here you would typically transcribe the audio file
+        // For now, we'll just acknowledge receipt of the audio file
+        message = "Audio file received. Transcription: [Audio content would be transcribed here]";
+        break;
+      default:
+        return res.status(400).json({ error: 'Invalid input type' });
+    }
+
+    // Process message with selected model
     switch (model.provider) {
       case 'groq':
         const completion = await groq.chat.completions.create({
@@ -198,6 +225,11 @@ app.post('/api/chat', async (req, res) => {
   } catch (error) {
     console.error('Error in chat:', error);
     res.status(500).json({ error: 'Failed to generate response', details: error.message });
+  } finally {
+    // Clean up uploaded file if it exists
+    if (req.file) {
+      fs.unlink(req.file.path).catch(console.error);
+    }
   }
 });
 

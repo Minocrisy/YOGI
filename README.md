@@ -4,7 +4,7 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 
 ## Features
 
-- **Chat Generation**: Engage in conversations with various language models.
+- **Chat Generation**: Engage in conversations with various language models, now supporting text, file, image, and audio inputs.
 - **Image Generation**: Create images from text descriptions.
 - **Vision Analysis**: Analyze and describe images using OpenAI's GPT-4o-mini or Google's Gemini 1.5 Pro Vision.
 - **Video Generation**: Generate videos from text prompts or images (currently in development).
@@ -16,13 +16,12 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 
 ## Recent Updates
 
+- Enhanced chat functionality to support text, file, image, and audio inputs.
+- Updated the chat UI to include buttons for file, image, and voice input.
+- Improved error handling and user feedback across all modules.
 - Enhanced vision analysis capabilities, now supporting both OpenAI's GPT-4o-mini and Google's Gemini 1.5 Pro Vision.
-- Updated the vision analysis UI to display the cost of each analysis.
-- Added a loading indicator during vision analysis for better user feedback.
 - Implemented audio generation functionality using ElevenLabs TTS.
 - Integrated multiple chat models (Groq, OpenAI, Anthropic, Mistral, Google).
-- Improved error handling and user feedback across all modules.
-- Started development on video generation feature (currently facing some challenges).
 
 ## Installation
 
@@ -61,8 +60,16 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 
 1. Select the desired tab for the type of generation you want (Chat, Image, Vision, Audio, etc.).
 2. Choose a model from the dropdown menu.
-3. Enter your prompt or upload an image as required.
+3. Enter your prompt or upload a file/image/audio as required.
 4. Click the generate button to receive the AI-generated response.
+
+### Chat
+
+The chat feature now supports multiple input types:
+1. Text: Type your message in the input field.
+2. File: Click the file button to upload and send a text file.
+3. Image: Click the image button to upload and send an image file.
+4. Voice: Click the voice button to record and send an audio message.
 
 ### Vision Analysis
 

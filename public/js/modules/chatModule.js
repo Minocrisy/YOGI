@@ -3,6 +3,9 @@ export function initChatModule() {
     const chatInput = document.querySelector('#chat .user-input');
     const chatSendButton = document.querySelector('#chat .send-button');
     const chatModelSelect = document.querySelector('#chat .model-select');
+    const fileButton = document.querySelector('#chat .file-button');
+    const imageButton = document.querySelector('#chat .image-button');
+    const voiceButton = document.querySelector('#chat .voice-button');
 
     chatSendButton.addEventListener('click', handleSendMessage);
     chatInput.addEventListener('keypress', (e) => {
@@ -12,6 +15,10 @@ export function initChatModule() {
         }
     });
 
+    fileButton.addEventListener('click', handleFileUpload);
+    imageButton.addEventListener('click', handleImageUpload);
+    voiceButton.addEventListener('click', handleVoiceInput);
+
     async function handleSendMessage() {
         const message = chatInput.value.trim();
         if (message) {
@@ -20,18 +27,97 @@ export function initChatModule() {
         }
     }
 
-    async function sendChatMessage(message) {
-        addMessageToChat('User', message);
+    async function handleFileUpload() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.txt,.pdf,.doc,.docx';
+        input.onchange = async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const content = e.target.result;
+                    await sendChatMessage(`File content: ${content}`, 'file', file.name);
+                };
+                reader.readAsText(file);
+            }
+        };
+        input.click();
+    }
+
+    async function handleImageUpload() {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/*';
+        input.onchange = async (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const content = e.target.result;
+                    await sendChatMessage(content, 'image', file.name);
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+        input.click();
+    }
+
+    async function handleVoiceInput() {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            const audioChunks = [];
+
+            mediaRecorder.addEventListener("dataavailable", (event) => {
+                audioChunks.push(event.data);
+            });
+
+            mediaRecorder.addEventListener("stop", async () => {
+                const audioBlob = new Blob(audioChunks);
+                const audioUrl = URL.createObjectURL(audioBlob);
+                await sendChatMessage(audioUrl, 'audio', 'Voice message');
+            });
+
+            mediaRecorder.start();
+            voiceButton.textContent = 'Stop Recording';
+            voiceButton.onclick = () => {
+                mediaRecorder.stop();
+                stream.getTracks().forEach(track => track.stop());
+                voiceButton.textContent = 'Voice Input';
+                voiceButton.onclick = handleVoiceInput;
+            };
+        } catch (error) {
+            console.error('Error accessing microphone:', error);
+            alert('Unable to access the microphone. Please check your browser settings.');
+        }
+    }
+
+    async function sendChatMessage(message, type = 'text', fileName = '') {
+        addMessageToChat('User', type === 'text' ? message : `Sent a ${type}: ${fileName}`);
         try {
             chatSendButton.disabled = true;
             chatSendButton.innerHTML = 'Sending... <span class="loading"></span>';
             
             const selectedModelId = chatModelSelect.value;
 
+            const formData = new FormData();
+            formData.append('modelId', selectedModelId);
+            formData.append('type', type);
+
+            if (type === 'text') {
+                formData.append('message', message);
+            } else if (type === 'file' || type === 'image') {
+                const blob = await fetch(message).then(r => r.blob());
+                formData.append('file', blob, fileName);
+            } else if (type === 'audio') {
+                const blob = await fetch(message).then(r => r.blob());
+                formData.append('audio', blob, 'voice_message.webm');
+            }
+
             const response = await fetch('/api/chat', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message, modelId: selectedModelId })
+                body: formData
             });
 
             const data = await response.json();
