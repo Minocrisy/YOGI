@@ -43,7 +43,7 @@ export function initVisionModule() {
         formData.append('question', question);
         formData.append('modelId', visionModelSelect.value);
 
-        visionResult.innerHTML = '<p>Analyzing image... <span class="loading"></span></p>';
+        visionResult.innerHTML = '<p>Analyzing image... <div class="loader"></div></p>';
         visionAnalyzeButton.disabled = true;
 
         try {
@@ -56,7 +56,8 @@ export function initVisionModule() {
             console.log('Response received:', response.status);
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorData = await response.json();
+                throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
@@ -64,6 +65,7 @@ export function initVisionModule() {
             visionResult.innerHTML = `
                 <h3>Analysis Result:</h3>
                 <p>${data.result}</p>
+                <p>Cost: $${data.cost.toFixed(4)}</p>
                 <img src="${URL.createObjectURL(file)}" alt="Analyzed Image" style="max-width: 100%; margin-top: 10px;">
             `;
         } catch (error) {
@@ -81,3 +83,22 @@ export function initVisionModule() {
 
     return { handleVisionAnalysis, fetchVisionModels };
 }
+
+// Add this CSS to your styles.css file or include it in the <style> tag of your HTML
+/*
+.loader {
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #3498db;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    margin-left: 10px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+*/

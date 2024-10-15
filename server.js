@@ -65,7 +65,6 @@ function updateApiClients() {
 let models = [
   { id: 'groq-mixtral', name: 'Groq Mixtral', type: 'text', provider: 'groq' },
   { id: 'hf-flux', name: 'Hugging Face FLUX', type: 'image', provider: 'huggingface' },
-  { id: 'salesforce/blip-image-captioning-large', name: 'BLIP Image Captioning', type: 'vision', provider: 'huggingface' },
   { id: 'gpt-4o-mini', name: 'GPT-4o-mini Vision', type: 'vision', provider: 'openai' },
   { id: 'gpt-4o-mini', name: 'GPT-4o-mini', type: 'text', provider: 'openai' },
   { id: 'openai-dalle3', name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' },
@@ -75,6 +74,7 @@ let models = [
   { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', type: 'text', provider: 'anthropic' },
   { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', type: 'text', provider: 'anthropic' },
   { id: 'gemini-pro', name: 'Gemini Pro', type: 'text', provider: 'google' },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro Vision', type: 'vision', provider: 'google' },
   { id: 'stabilityai/stable-video-diffusion-img2vid-xt', name: 'Stable Video Diffusion', type: 'video', provider: 'huggingface' },
 ];
 
@@ -430,6 +430,78 @@ app.post('/api/generate-audio', async (req, res) => {
   } catch (error) {
     console.error('Error in audio generation:', error);
     res.status(500).json({ error: 'Failed to generate audio', details: error.message });
+  }
+});
+
+// Vision Analysis route
+app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
+  const { question, modelId } = req.body;
+  try {
+    const model = models.find(m => m.id === modelId);
+    if (!model || model.type !== 'vision') {
+      return res.status(400).json({ error: 'Invalid model selected for vision analysis' });
+    }
+
+    let result;
+    let cost = 0;
+
+    const imageBuffer = await fs.readFile(req.file.path);
+    const base64Image = imageBuffer.toString('base64');
+
+    switch (model.provider) {
+      case 'openai':
+        try {
+          const openaiResponse = await openai.chat.completions.create({
+            model: "gpt-4o-mini",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: question },
+                  { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+                ],
+              },
+            ],
+          });
+          result = openaiResponse.choices[0].message.content;
+          cost = 0.1; // Example cost
+        } catch (error) {
+          console.error('OpenAI Vision API error:', error);
+          return res.status(500).json({ error: 'Failed to analyze image with OpenAI Vision API', details: error.message });
+        }
+        break;
+      case 'google':
+        try {
+          const geminiModel = genai.getGenerativeModel({ model: "gemini-1.5-pro" });
+          const geminiResponse = await geminiModel.generateContent([
+            question,
+            { inlineData: { data: base64Image, mimeType: "image/jpeg" } },
+          ]);
+          result = geminiResponse.response.text();
+          cost = 0.05; // Example cost
+        } catch (error) {
+          console.error('Gemini Vision API error:', error);
+          return res.status(500).json({ error: 'Failed to analyze image with Gemini Vision API', details: error.message });
+        }
+        break;
+      default:
+        return res.status(501).json({ error: 'Vision analysis not implemented for this provider' });
+    }
+
+    // Update usage stats
+    usageStats.totalCalls++;
+    usageStats.totalCost += cost;
+    usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
+
+    res.json({ result, cost });
+  } catch (error) {
+    console.error('Error in vision analysis:', error);
+    res.status(500).json({ error: 'Failed to analyze image', details: error.message });
+  } finally {
+    // Clean up the uploaded file
+    if (req.file) {
+      fs.unlink(req.file.path).catch(console.error);
+    }
   }
 });
 

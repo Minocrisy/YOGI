@@ -1,14 +1,14 @@
 # YOGI - Your Own Generative Interface
 
-YOGI is a versatile AI-powered application that integrates various generative AI models for text, image, and video generation. It provides a user-friendly interface for interacting with different AI models and managing API keys.
+YOGI is a versatile AI-powered application that integrates various generative AI models for text, image, audio, and vision analysis. It provides a user-friendly interface for interacting with different AI models and managing API keys.
 
 ## Features
 
 - **Chat Generation**: Engage in conversations with various language models.
 - **Image Generation**: Create images from text descriptions.
-- **Vision Analysis**: Analyze and describe images.
+- **Vision Analysis**: Analyze and describe images using OpenAI's GPT-4o-mini or Google's Gemini 1.5 Pro Vision.
 - **Video Generation**: Generate videos from text prompts or images (currently in development).
-- **Audio Generation**: Create audio content (placeholder for future implementation).
+- **Audio Generation**: Create audio content using ElevenLabs TTS.
 - **Notion Integration**: Sync data with Notion (placeholder for future implementation).
 - **API Key Management**: Securely manage API keys for different services.
 - **Model Management**: Add, remove, and select different AI models.
@@ -16,11 +16,13 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 
 ## Recent Updates
 
-- Implemented image generation functionality.
-- Added vision analysis capabilities.
+- Enhanced vision analysis capabilities, now supporting both OpenAI's GPT-4o-mini and Google's Gemini 1.5 Pro Vision.
+- Updated the vision analysis UI to display the cost of each analysis.
+- Added a loading indicator during vision analysis for better user feedback.
+- Implemented audio generation functionality using ElevenLabs TTS.
 - Integrated multiple chat models (Groq, OpenAI, Anthropic, Mistral, Google).
+- Improved error handling and user feedback across all modules.
 - Started development on video generation feature (currently facing some challenges).
-- Improved error handling and user feedback.
 
 ## Installation
 
@@ -57,10 +59,22 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 
 ## Usage
 
-1. Select the desired tab for the type of generation you want (Chat, Image, Vision, etc.).
+1. Select the desired tab for the type of generation you want (Chat, Image, Vision, Audio, etc.).
 2. Choose a model from the dropdown menu.
 3. Enter your prompt or upload an image as required.
 4. Click the generate button to receive the AI-generated response.
+
+### Vision Analysis
+
+To use the vision analysis feature:
+
+1. Go to the Vision tab.
+2. Select either "GPT-4o-mini Vision" (OpenAI) or "Gemini 1.5 Pro Vision" (Google) from the model dropdown.
+3. Upload an image using the file input.
+4. Enter a question or prompt about the image in the text input.
+5. Click the "Analyze" button to get the AI's analysis of the image.
+6. A loading indicator will appear during the analysis process.
+7. Once complete, the analysis result will be displayed along with the cost of the operation.
 
 ## Known Issues
 
@@ -69,9 +83,9 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 ## Future Plans
 
 - Implement text-to-video generation.
-- Add audio generation capabilities.
 - Enhance Notion integration features.
 - Improve error handling and user experience.
+- Add support for more vision analysis models.
 
 ## Contributing
 
