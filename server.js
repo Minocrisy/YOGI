@@ -74,7 +74,7 @@ let models = [
   { id: 'claude-3-haiku-20240307', name: 'Claude 3 Haiku', type: 'text', provider: 'anthropic' },
   { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', type: 'text', provider: 'anthropic' },
   { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', type: 'text', provider: 'anthropic' },
-  { id: 'imagen-3', name: 'Imagen 3', type: 'image', provider: 'google' },
+  { id: 'gemini-pro', name: 'Gemini Pro', type: 'text', provider: 'google' },
   { id: 'placeholder-video', name: 'Placeholder Video Model', type: 'video', provider: 'placeholder' },
 ];
 
@@ -178,6 +178,12 @@ app.post('/api/chat', async (req, res) => {
         response = mistralResponse.data.choices[0].message.content;
         cost = 0.01; // Example cost
         break;
+      case 'google':
+        const geminiModel = genai.getGenerativeModel({ model: "gemini-pro" });
+        const result = await geminiModel.generateContent(message);
+        response = result.response.text();
+        cost = 0.02; // Example cost
+        break;
       default:
         response = `Chat response from ${model.name} (${model.provider}) - Not yet implemented`;
         cost = 0.01; // Example cost
@@ -216,10 +222,12 @@ app.post('/api/generate-image', async (req, res) => {
           
           const hfResponse = await hf.textToImage({
             inputs: prompt,
-            model: "stabilityai/stable-diffusion-xl-base-1.0",
+            model: "black-forest-labs/FLUX.1-dev",
             parameters: {
-              negative_prompt: "blurry, bad",
               guidance_scale: 7.5,
+              num_inference_steps: 50,
+              width: 768,
+              height: 768,
             },
           });
           
@@ -250,31 +258,6 @@ app.post('/api/generate-image', async (req, res) => {
         } catch (error) {
           console.error('OpenAI API error:', error);
           return res.status(500).json({ error: 'Failed to generate image with OpenAI API', details: error.message });
-        }
-        break;
-      case 'google':
-        try {
-          const model = genai.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const result = await model.generateContent(prompt);
-          const response = await result.response;
-          if (response.candidates && response.candidates[0].content && response.candidates[0].content.parts) {
-            const imagePart = response.candidates[0].content.parts.find(part => part.inlineData && part.inlineData.mimeType.startsWith('image/'));
-            if (imagePart) {
-              const imageBuffer = Buffer.from(imagePart.inlineData.data, 'base64');
-              const fileName = `${Date.now()}.png`;
-              const filePath = path.join(uploadsDir, fileName);
-              await fs.writeFile(filePath, imageBuffer);
-              imageUrl = `/uploads/${fileName}`;
-              cost = 0.08; // Example cost
-            } else {
-              throw new Error('No image data found in the response');
-            }
-          } else {
-            throw new Error('Unexpected response format from Gemini API');
-          }
-        } catch (error) {
-          console.error('Google Gemini API error:', error);
-          return res.status(500).json({ error: 'Failed to generate image with Google Gemini API', details: error.message });
         }
         break;
       default:
