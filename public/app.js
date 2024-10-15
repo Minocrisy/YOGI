@@ -10,6 +10,7 @@ import { initNotionModule } from './js/modules/notionModule.js';
 import { initApiKeyModule } from './js/modules/apiKeyModule.js';
 import { initModelModule } from './js/modules/modelModule.js';
 import { initUsageStatsModule } from './js/modules/usageStatsModule.js';
+import videoTranscriptionModule from './js/modules/videoTranscriptionModule.js';
 
 document.addEventListener('DOMContentLoaded', async () => {
     try {
@@ -53,12 +54,41 @@ document.addEventListener('DOMContentLoaded', async () => {
         const uploadModule = initUploadModule(chatModule.addMessageToChat);
         const voiceInputModule = initVoiceInputModule();
         const notionModule = initNotionModule();
+        videoTranscriptionModule.initialize();
         console.log('Dependent modules initialized');
 
         // Add event listeners for updates
         modelModule.addEventListener('modelsUpdated', updateUIWithModels);
         apiKeyModule.addEventListener('apiKeysUpdated', updateUIWithApiKeys);
         usageStatsModule.addEventListener('usageStatsUpdated', updateUIWithUsageStats);
+
+        // Set up event listeners for video transcription
+        const fileInput = document.querySelector('#video-transcription .file-input');
+        const transcribeButton = document.querySelector('#video-transcription .send-button');
+        const summarizeButton = document.querySelector('#video-transcription .summarize-button');
+
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                transcribeButton.disabled = false;
+            } else {
+                transcribeButton.disabled = true;
+                summarizeButton.disabled = true;
+            }
+        });
+
+        transcribeButton.addEventListener('click', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const selectedModel = document.querySelector('#video-transcription .model-select').value;
+                videoTranscriptionModule.transcribeVideo(file, selectedModel);
+                summarizeButton.disabled = false;
+            }
+        });
+
+        summarizeButton.addEventListener('click', () => {
+            videoTranscriptionModule.summarizeTranscription();
+        });
 
         console.log('All modules initialized successfully');
     } catch (error) {

@@ -25,7 +25,10 @@ export function initModelModule() {
                 { name: 'Gemini Pro', type: 'text', provider: 'google' },
                 { name: 'Hugging Face FLUX', type: 'image', provider: 'huggingface' },
                 { name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' },
-                { name: 'Stable Video Diffusion', type: 'video', provider: 'huggingface' }
+                { name: 'Stable Video Diffusion', type: 'video', provider: 'huggingface' },
+                { name: 'Whisper', type: 'transcription', provider: 'OpenAI' },
+                { name: 'Google Speech-to-Text', type: 'transcription', provider: 'Google' },
+                { name: 'Amazon Transcribe', type: 'transcription', provider: 'Amazon' }
             ];
 
             for (const defaultModel of defaultModels) {
@@ -65,7 +68,7 @@ export function initModelModule() {
     async function addModel(name, type, provider) {
         if (!name || !type || !provider) {
             name = prompt('Enter a name for the model:');
-            type = prompt('Enter the model type (text, image, video, audio, or vision):');
+            type = prompt('Enter the model type (text, image, video, audio, vision, or transcription):');
             provider = prompt('Enter the provider name:');
         }
         if (name && type && provider) {
