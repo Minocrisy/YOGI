@@ -4,6 +4,8 @@ export function initModelModule() {
     const modelSelects = document.querySelectorAll('.model-select');
     let availableModels = [];
 
+    const eventTarget = new EventTarget();
+
     addModelBtn.addEventListener('click', addModel);
 
     async function loadModels() {
@@ -22,7 +24,8 @@ export function initModelModule() {
                 { name: 'Claude 3 Opus', type: 'text', provider: 'Anthropic' },
                 { name: 'Gemini Pro', type: 'text', provider: 'google' },
                 { name: 'Hugging Face FLUX', type: 'image', provider: 'huggingface' },
-                { name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' }
+                { name: 'OpenAI DALL-E 3', type: 'image', provider: 'openai' },
+                { name: 'Stable Video Diffusion', type: 'video', provider: 'huggingface' }
             ];
 
             for (const defaultModel of defaultModels) {
@@ -33,6 +36,7 @@ export function initModelModule() {
 
             updateModelSelects();
             updateModelsList();
+            eventTarget.dispatchEvent(new Event('modelsUpdated'));
         } catch (error) {
             console.error('Error loading models:', error);
             modelsList.innerHTML = '<p>Error loading models. Please try refreshing the page.</p>';
@@ -100,5 +104,11 @@ export function initModelModule() {
     // Make removeModel global
     window.removeModel = removeModel;
 
-    return { loadModels, addModel, removeModel };
+    return {
+        loadModels,
+        addModel,
+        removeModel,
+        addEventListener: eventTarget.addEventListener.bind(eventTarget),
+        removeEventListener: eventTarget.removeEventListener.bind(eventTarget)
+    };
 }

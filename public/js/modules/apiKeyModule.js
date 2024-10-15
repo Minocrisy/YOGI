@@ -1,3 +1,6 @@
+let apiKeys = [];
+const eventTarget = new EventTarget();
+
 export function initApiKeyModule() {
     const apiKeysList = document.getElementById('api-keys-list');
     const addApiKeyBtn = document.getElementById('add-api-key');
@@ -10,20 +13,15 @@ export function initApiKeyModule() {
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const keys = await response.json();
-            apiKeysList.innerHTML = keys.map(key => `
-                <div>
-                    <span>${key.name}: ${key.value.substring(0, 5)}...</span>
-                    <button onclick="removeApiKey('${key.id}')">Remove</button>
-                </div>
-            `).join('');
+            apiKeys = await response.json();
+            updateApiKeysList();
 
             // Check for required API keys
             const requiredKeys = ['Anthropic', 'Groq', 'HuggingFace', 'ElevenLabs'];
             const textGenerationKeys = ['Mistral AI', 'OpenAI'];
             
             // First, check for Mistral AI or OpenAI
-            const hasTextGenerationKey = keys.some(key => textGenerationKeys.includes(key.name));
+            const hasTextGenerationKey = apiKeys.some(key => textGenerationKeys.includes(key.name));
             if (!hasTextGenerationKey) {
                 const shouldAddMistral = confirm(`Mistral AI API key is missing. Would you like to add it now?`);
                 if (shouldAddMistral) {
@@ -38,17 +36,28 @@ export function initApiKeyModule() {
 
             // Then check for other required keys
             for (const requiredKey of requiredKeys) {
-                if (!keys.some(key => key.name === requiredKey)) {
+                if (!apiKeys.some(key => key.name === requiredKey)) {
                     const shouldAdd = confirm(`${requiredKey} API key is missing. Would you like to add it now?`);
                     if (shouldAdd) {
                         await addApiKey(requiredKey);
                     }
                 }
             }
+
+            eventTarget.dispatchEvent(new Event('apiKeysUpdated'));
         } catch (error) {
             console.error('Error loading API keys:', error);
             apiKeysList.innerHTML = '<p>Error loading API keys. Please try refreshing the page.</p>';
         }
+    }
+
+    function updateApiKeysList() {
+        apiKeysList.innerHTML = apiKeys.map(key => `
+            <div>
+                <span>${key.name}: ${key.value.substring(0, 5)}...</span>
+                <button onclick="removeApiKey('${key.id}')">Remove</button>
+            </div>
+        `).join('');
     }
 
     async function addApiKey(suggestedName = '') {
@@ -90,5 +99,16 @@ export function initApiKeyModule() {
     // Make removeApiKey global
     window.removeApiKey = removeApiKey;
 
-    return { loadApiKeys, addApiKey, removeApiKey };
+    return {
+        loadApiKeys,
+        addApiKey,
+        removeApiKey,
+        addEventListener: eventTarget.addEventListener.bind(eventTarget),
+        removeEventListener: eventTarget.removeEventListener.bind(eventTarget)
+    };
+}
+
+export function getApiKey(name) {
+    const key = apiKeys.find(k => k.name === name);
+    return key ? key.value : null;
 }

@@ -1,31 +1,33 @@
-# YOGI (Your Own Generative Interface)
+# YOGI - Your Own Generative Interface
 
-YOGI is a web-based application that integrates various AI models and services, providing a unified interface for chat, image generation, vision analysis, and more.
+YOGI is a versatile AI-powered application that integrates various generative AI models for text, image, and video generation. It provides a user-friendly interface for interacting with different AI models and managing API keys.
 
 ## Features
 
-- Chat interface with multiple AI model support (OpenAI, Anthropic, Groq, Mistral)
-- Image generation using various AI models (Hugging Face, OpenAI DALL-E 3, Google Gemini)
-- Vision analysis (upload an image and ask questions about it)
-- Notion integration for data synchronization
-- API key management for various AI services
-- Usage statistics tracking
-- Modular architecture for easy expansion and maintenance
+- **Chat Generation**: Engage in conversations with various language models.
+- **Image Generation**: Create images from text descriptions.
+- **Vision Analysis**: Analyze and describe images.
+- **Video Generation**: Generate videos from text prompts or images (currently in development).
+- **Audio Generation**: Create audio content (placeholder for future implementation).
+- **Notion Integration**: Sync data with Notion (placeholder for future implementation).
+- **API Key Management**: Securely manage API keys for different services.
+- **Model Management**: Add, remove, and select different AI models.
+- **Usage Tracking**: Monitor API calls and associated costs.
 
 ## Recent Updates
 
-- Implemented chat functionality with support for multiple AI providers
-- Updated model selection to dynamically populate available models
-- Improved image generation capabilities, including integration with Google Gemini for enhanced prompts
-- Added detailed logging for troubleshooting
-- Improved error handling and user feedback
-- Refactored API key management for better security and flexibility
+- Implemented image generation functionality.
+- Added vision analysis capabilities.
+- Integrated multiple chat models (Groq, OpenAI, Anthropic, Mistral, Google).
+- Started development on video generation feature (currently facing some challenges).
+- Improved error handling and user feedback.
 
-## Setup
+## Installation
 
 1. Clone the repository:
    ```
-   git clone https://github.com/Minocrisy/YOGI.git
+   git clone https://github.com/yourusername/YOGI.git
+   cd YOGI
    ```
 
 2. Install dependencies:
@@ -33,59 +35,48 @@ YOGI is a web-based application that integrates various AI models and services, 
    npm install
    ```
 
-3. Set up your environment variables in a `.env` file. Required variables include:
-   - OPENAI_API_KEY
-   - ANTHROPIC_API_KEY
-   - GROQ_API_KEY
-   - MISTRAL_API_KEY
-   - HUGGINGFACE_API_KEY
-   - ELEVENLABS_API_KEY
-   - NOTION_API_KEY
-   - GEMINI_API_KEY
+3. Set up environment variables:
+   Create a `.env` file in the root directory and add your API keys:
+   ```
+   NOTION_API_KEY=your_notion_api_key
+   GROQ_API_KEY=your_groq_api_key
+   HUGGINGFACE_API_KEY=your_huggingface_api_key
+   OPENAI_API_KEY=your_openai_api_key
+   GEMINI_API_KEY=your_gemini_api_key
+   MISTRAL_API_KEY=your_mistral_api_key
+   ANTHROPIC_API_KEY=your_anthropic_api_key
+   ELEVENLABS_API_KEY=your_elevenlabs_api_key
+   ```
 
 4. Start the server:
    ```
    npm start
    ```
 
-5. Open your browser and navigate to `http://localhost:3000` (or the port specified in your console output).
+5. Open your browser and navigate to `http://localhost:3000`.
 
 ## Usage
 
-1. **Chat**: Select a model from the dropdown and start chatting. The application supports various AI models for text generation.
+1. Select the desired tab for the type of generation you want (Chat, Image, Vision, etc.).
+2. Choose a model from the dropdown menu.
+3. Enter your prompt or upload an image as required.
+4. Click the generate button to receive the AI-generated response.
 
-2. **Image Generation**: Choose an image generation model (Hugging Face, DALL-E 3, or Google Gemini), provide a prompt, and generate images.
+## Known Issues
 
-3. **Vision Analysis**: Upload an image, select a vision model, and ask questions about the image content.
+- Video generation is currently not functioning as expected. We are working on resolving issues with the Hugging Face API integration for this feature.
 
-4. **API Management**: Add, remove, or view API keys for different services in the API Management tab.
+## Future Plans
 
-5. **Notion Integration**: Sync your YOGI data with Notion using the integration feature.
-
-## Project Structure
-
-- `server.js`: Main server file handling API routes and server setup
-- `public/`: Frontend files
-  - `index.html`: Main HTML file
-  - `app.js`: Main JavaScript file for the frontend
-  - `styles.css`: Main CSS file
-  - `js/modules/`: Contains modular JavaScript files for different functionalities
+- Implement text-to-video generation.
+- Add audio generation capabilities.
+- Enhance Notion integration features.
+- Improve error handling and user experience.
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository
-2. Create a new branch: `git checkout -b feature-branch-name`
-3. Make your changes and commit them: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature-branch-name`
-5. Submit a pull request
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-- OpenAI, Anthropic, Groq, Mistral, Google, and other AI providers for their APIs
-- The open-source community for various libraries and tools used in this project
+This project is licensed under the MIT License.

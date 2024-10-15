@@ -75,7 +75,7 @@ let models = [
   { id: 'claude-3-5-sonnet-20240620', name: 'Claude 3.5 Sonnet', type: 'text', provider: 'anthropic' },
   { id: 'claude-3-opus-20240229', name: 'Claude 3 Opus', type: 'text', provider: 'anthropic' },
   { id: 'gemini-pro', name: 'Gemini Pro', type: 'text', provider: 'google' },
-  { id: 'placeholder-video', name: 'Placeholder Video Model', type: 'video', provider: 'placeholder' },
+  { id: 'stabilityai/stable-video-diffusion-img2vid-xt', name: 'Stable Video Diffusion', type: 'video', provider: 'huggingface' },
 ];
 
 // Initialize usage stats
@@ -273,6 +273,88 @@ app.post('/api/generate-image', async (req, res) => {
   } catch (error) {
     console.error('Error in image generation:', error);
     res.status(500).json({ error: 'Failed to generate image', details: error.message });
+  }
+});
+
+// Video Generation route
+app.post('/api/generate-video', async (req, res) => {
+  const { prompt, modelId, imageData } = req.body;
+  try {
+    const model = models.find(m => m.id === modelId);
+    if (!model || model.type !== 'video') {
+      return res.status(400).json({ error: 'Invalid model selected for video generation' });
+    }
+
+    let videoUrl;
+    let cost = 0;
+
+    if (model.provider === 'huggingface') {
+      try {
+        console.log('Attempting to generate video with Hugging Face API');
+        console.log('Prompt:', prompt);
+        console.log('Model:', model.id);
+
+        if (imageData) {
+          // Image to Video using Hugging Face API
+          const hfResponse = await axios.post(
+            `https://api-inference.huggingface.co/models/${model.id}`,
+            {
+              inputs: imageData,
+              parameters: {
+                prompt: prompt,
+                num_inference_steps: 50,
+                num_frames: 16,
+                height: 320,
+                width: 576,
+              },
+            },
+            {
+              headers: {
+                Authorization: `Bearer ${getApiKey('HuggingFace')}`,
+                'Content-Type': 'application/json',
+              },
+              responseType: 'arraybuffer',
+            }
+          );
+
+          console.log('Hugging Face API response received');
+          const buffer = Buffer.from(hfResponse.data);
+          const fileName = `${Date.now()}.mp4`;
+          const filePath = path.join(uploadsDir, fileName);
+          await fs.writeFile(filePath, buffer);
+          videoUrl = `/uploads/${fileName}`;
+          cost = 0.5; // Example cost, adjust as needed
+          console.log('Video saved successfully:', videoUrl);
+        } else {
+          console.log('Text to Video generation is not yet implemented');
+          return res.status(501).json({ error: 'Text to Video generation is not yet implemented' });
+        }
+      } catch (error) {
+        console.error('Hugging Face API error:', error);
+        let errorMessage = 'Unknown error occurred';
+        if (error.response) {
+          if (error.response.data instanceof Buffer) {
+            errorMessage = error.response.data.toString('utf8');
+          } else {
+            errorMessage = JSON.stringify(error.response.data);
+          }
+        }
+        console.error('Error details:', errorMessage);
+        return res.status(500).json({ error: 'Failed to generate video with Hugging Face API', details: errorMessage });
+      }
+    } else {
+      return res.status(501).json({ error: 'Video generation not implemented for this provider' });
+    }
+
+    // Update usage stats
+    usageStats.totalCalls++;
+    usageStats.totalCost += cost;
+    usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
+
+    res.json({ videoUrl, cost });
+  } catch (error) {
+    console.error('Error in video generation:', error);
+    res.status(500).json({ error: 'Failed to generate video', details: error.message });
   }
 });
 
