@@ -3,9 +3,9 @@ export function initChatModule() {
     const chatInput = document.querySelector('#chat .user-input');
     const chatSendButton = document.querySelector('#chat .send-button');
     const chatModelSelect = document.querySelector('#chat .model-select');
-    const fileButton = document.querySelector('#chat .file-button');
-    const imageButton = document.querySelector('#chat .image-button');
-    const voiceButton = document.querySelector('#chat .voice-button');
+    const fileButton = document.querySelector('#chat .file-upload');
+    const imageButton = document.querySelector('#chat .image-upload');
+    const voiceButton = document.querySelector('#chat .voice-input');
 
     chatSendButton.addEventListener('click', handleSendMessage);
     chatInput.addEventListener('keypress', (e) => {

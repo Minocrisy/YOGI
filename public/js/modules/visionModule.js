@@ -10,15 +10,20 @@ export function initVisionModule() {
     // Fetch and populate vision models
     async function fetchVisionModels() {
         try {
+            console.log('Fetching vision models...');
             const response = await fetch('/api/models');
+            console.log('Response status:', response.status);
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             const models = await response.json();
+            console.log('All models:', models);
             const visionModels = models.filter(model => model.type === 'vision');
+            console.log('Vision models:', visionModels);
             visionModelSelect.innerHTML = visionModels.map(model => 
                 `<option value="${model.id}">${model.name} (${model.provider})</option>`
             ).join('');
+            console.log('Vision model select options updated');
         } catch (error) {
             console.error('Error fetching vision models:', error);
             visionModelSelect.innerHTML = '<option>Error loading models</option>';
@@ -48,6 +53,11 @@ export function initVisionModule() {
 
         try {
             console.log('Sending vision analysis request');
+            console.log('Request payload:', {
+                image: file.name,
+                question: question,
+                modelId: visionModelSelect.value
+            });
             const response = await fetch('/api/analyze-vision', {
                 method: 'POST',
                 body: formData

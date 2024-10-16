@@ -12,7 +12,7 @@ import { initModelModule } from './js/modules/modelModule.js';
 import { initUsageStatsModule } from './js/modules/usageStatsModule.js';
 import videoTranscriptionModule from './js/modules/videoTranscriptionModule.js';
 
-document.addEventListener('DOMContentLoaded', async () => {
+async function initializeApp() {
     try {
         console.log('Initializing modules...');
         const tabManager = initTabManager();
@@ -67,35 +67,39 @@ document.addEventListener('DOMContentLoaded', async () => {
         const transcribeButton = document.querySelector('#video-transcription .send-button');
         const summarizeButton = document.querySelector('#video-transcription .summarize-button');
 
-        fileInput.addEventListener('change', (event) => {
-            const file = event.target.files[0];
-            if (file) {
-                transcribeButton.disabled = false;
-            } else {
-                transcribeButton.disabled = true;
-                summarizeButton.disabled = true;
-            }
-        });
+        if (fileInput && transcribeButton && summarizeButton) {
+            fileInput.addEventListener('change', (event) => {
+                const file = event.target.files[0];
+                if (file) {
+                    transcribeButton.disabled = false;
+                } else {
+                    transcribeButton.disabled = true;
+                    summarizeButton.disabled = true;
+                }
+            });
 
-        transcribeButton.addEventListener('click', () => {
-            const file = fileInput.files[0];
-            if (file) {
-                const selectedModel = document.querySelector('#video-transcription .model-select').value;
-                videoTranscriptionModule.transcribeVideo(file, selectedModel);
-                summarizeButton.disabled = false;
-            }
-        });
+            transcribeButton.addEventListener('click', () => {
+                const file = fileInput.files[0];
+                if (file) {
+                    const selectedModel = document.querySelector('#video-transcription .model-select').value;
+                    videoTranscriptionModule.transcribeVideo(file, selectedModel);
+                    summarizeButton.disabled = false;
+                }
+            });
 
-        summarizeButton.addEventListener('click', () => {
-            videoTranscriptionModule.summarizeTranscription();
-        });
+            summarizeButton.addEventListener('click', () => {
+                videoTranscriptionModule.summarizeTranscription();
+            });
+        } else {
+            console.error('One or more video transcription elements not found');
+        }
 
         console.log('All modules initialized successfully');
     } catch (error) {
         console.error('Error initializing modules:', error);
         console.error('Error stack:', error.stack);
     }
-});
+}
 
 async function updateUIWithModels() {
     console.log('Updating UI with models...');
@@ -133,3 +137,8 @@ function updateUIWithUsageStats() {
     console.log('Usage stats updated, refreshing UI');
     // Update UI elements that display usage stats
 }
+
+document.addEventListener('DOMContentLoaded', () => {
+    // Delay the initialization slightly to ensure DOM is fully loaded
+    setTimeout(initializeApp, 100);
+});
