@@ -1,7 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
-const fs = require('fs').promises;
+const fs = require('fs');
+const fsPromises = require('fs').promises;
 const multer = require('multer');
 const { Client } = require('@notionhq/client');
 const { Groq } = require('groq-sdk');
@@ -9,6 +10,8 @@ const { HfInference } = require('@huggingface/inference');
 const OpenAI = require('openai');
 const axios = require('axios');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const ffmpeg = require('fluent-ffmpeg');
+const ytdl = require('ytdl-core');
 require('dotenv').config();
 
 const app = express();
@@ -17,7 +20,7 @@ let PORT = process.env.PORT || DEFAULT_PORT;
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, 'uploads');
-fs.mkdir(uploadsDir, { recursive: true }).catch(console.error);
+fsPromises.mkdir(uploadsDir, { recursive: true }).catch(console.error);
 
 // Set up multer for handling file uploads
 const upload = multer({ dest: uploadsDir });
@@ -76,6 +79,9 @@ let models = [
   { id: 'gemini-pro', name: 'Gemini Pro', type: 'text', provider: 'google' },
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro Vision', type: 'vision', provider: 'google' },
   { id: 'stabilityai/stable-video-diffusion-img2vid-xt', name: 'Stable Video Diffusion', type: 'video', provider: 'huggingface' },
+  { id: 'whisper-1', name: 'Whisper', type: 'transcription', provider: 'openai' },
+  { id: 'google-speech-to-text', name: 'Google Speech-to-Text', type: 'transcription', provider: 'google' },
+  { id: 'amazon-transcribe', name: 'Amazon Transcribe', type: 'transcription', provider: 'amazon' },
 ];
 
 // Initialize usage stats
@@ -142,7 +148,7 @@ app.post('/api/chat', upload.single('file'), async (req, res) => {
         if (!req.file) {
           return res.status(400).json({ error: 'No file uploaded' });
         }
-        const fileContent = await fs.readFile(req.file.path, 'utf8');
+        const fileContent = await fsPromises.readFile(req.file.path, 'utf8');
         message = `File content: ${fileContent}`;
         break;
       case 'audio':
@@ -228,7 +234,7 @@ app.post('/api/chat', upload.single('file'), async (req, res) => {
   } finally {
     // Clean up uploaded file if it exists
     if (req.file) {
-      fs.unlink(req.file.path).catch(console.error);
+      fsPromises.unlink(req.file.path).catch(console.error);
     }
   }
 });
@@ -267,7 +273,7 @@ app.post('/api/generate-image', async (req, res) => {
           const buffer = Buffer.from(await hfResponse.arrayBuffer());
           const fileName = `${Date.now()}.png`;
           const filePath = path.join(uploadsDir, fileName);
-          await fs.writeFile(filePath, buffer);
+          await fsPromises.writeFile(filePath, buffer);
           imageUrl = `/uploads/${fileName}`;
           cost = 0.05; // Example cost
           console.log('Image saved successfully:', imageUrl);
@@ -353,7 +359,7 @@ app.post('/api/generate-video', async (req, res) => {
           const buffer = Buffer.from(hfResponse.data);
           const fileName = `${Date.now()}.mp4`;
           const filePath = path.join(uploadsDir, fileName);
-          await fs.writeFile(filePath, buffer);
+          await fsPromises.writeFile(filePath, buffer);
           videoUrl = `/uploads/${fileName}`;
           cost = 0.5; // Example cost, adjust as needed
           console.log('Video saved successfully:', videoUrl);
@@ -432,7 +438,7 @@ app.post('/api/generate-audio', async (req, res) => {
         const buffer = Buffer.from(elevenLabsResponse.data);
         const fileName = `${Date.now()}.mp3`;
         const filePath = path.join(uploadsDir, fileName);
-        await fs.writeFile(filePath, buffer);
+        await fsPromises.writeFile(filePath, buffer);
         audioUrl = `/uploads/${fileName}`;
         cost = 0.05; // Example cost, adjust as needed
         console.log('Audio saved successfully:', audioUrl);
@@ -477,7 +483,7 @@ app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
     let result;
     let cost = 0;
 
-    const imageBuffer = await fs.readFile(req.file.path);
+    const imageBuffer = await fsPromises.readFile(req.file.path);
     const base64Image = imageBuffer.toString('base64');
 
     switch (model.provider) {
@@ -532,8 +538,160 @@ app.post('/api/analyze-vision', upload.single('image'), async (req, res) => {
   } finally {
     // Clean up the uploaded file
     if (req.file) {
-      fs.unlink(req.file.path).catch(console.error);
+      fsPromises.unlink(req.file.path).catch(console.error);
     }
+  }
+});
+
+// Transcription route
+app.post('/api/transcribe', upload.single('file'), async (req, res) => {
+  const { modelId, url } = req.body;
+  try {
+    const model = models.find(m => m.id === modelId);
+    if (!model || model.type !== 'transcription') {
+      return res.status(400).json({ error: 'Invalid model selected for transcription' });
+    }
+
+    let transcription;
+    let cost = 0;
+
+    if (url) {
+      // Handle URL transcription
+      transcription = await transcribeUrl(url, model);
+    } else if (req.file) {
+      // Handle file transcription
+      transcription = await transcribeFile(req.file.path, model);
+    } else {
+      return res.status(400).json({ error: 'No file or URL provided for transcription' });
+    }
+
+    // Update usage stats
+    usageStats.totalCalls++;
+    usageStats.totalCost += cost;
+    usageStats.byModel[model.name] = (usageStats.byModel[model.name] || 0) + 1;
+
+    res.json({ transcription, cost });
+  } catch (error) {
+    console.error('Error in transcription:', error);
+    res.status(500).json({ error: 'Failed to transcribe audio', details: error.message });
+  } finally {
+    // Clean up the uploaded file if it exists
+    if (req.file) {
+      fsPromises.unlink(req.file.path).catch(console.error);
+    }
+  }
+});
+
+async function transcribeFile(filePath, model) {
+  const supportedFormats = ['flac', 'm4a', 'mp3', 'mp4', 'mpeg', 'mpga', 'oga', 'ogg', 'wav', 'webm'];
+  const fileExtension = path.extname(filePath).toLowerCase().slice(1);
+
+  if (!supportedFormats.includes(fileExtension)) {
+    const convertedFilePath = await convertToSupportedFormat(filePath);
+    filePath = convertedFilePath;
+  }
+
+  switch (model.provider) {
+    case 'openai':
+      const transcriptionFile = fs.createReadStream(filePath);
+      try {
+        const openaiResponse = await openai.audio.transcriptions.create({
+          file: transcriptionFile,
+          model: "whisper-1",
+        });
+        return openaiResponse.text;
+      } finally {
+        transcriptionFile.close();
+      }
+    case 'google':
+      // Implement Google Speech-to-Text API call here
+      return "Google Speech-to-Text transcription not implemented yet";
+    case 'amazon':
+      // Implement Amazon Transcribe API call here
+      return "Amazon Transcribe transcription not implemented yet";
+    default:
+      throw new Error('Transcription not implemented for this provider');
+  }
+}
+
+async function transcribeUrl(url, model) {
+  try {
+    const tempFilePath = path.join(uploadsDir, `temp_${Date.now()}.mp3`);
+    
+    if (ytdl.validateURL(url)) {
+      // If it's a YouTube URL, use ytdl to download the audio
+      await new Promise((resolve, reject) => {
+        ytdl(url, { filter: 'audioonly' })
+          .pipe(fs.createWriteStream(tempFilePath))
+          .on('finish', resolve)
+          .on('error', reject);
+      });
+    } else {
+      // For other URLs, use axios to download the file
+      const response = await axios({
+        method: 'get',
+        url: url,
+        responseType: 'stream'
+      });
+      const writer = fs.createWriteStream(tempFilePath);
+      response.data.pipe(writer);
+      await new Promise((resolve, reject) => {
+        writer.on('finish', resolve);
+        writer.on('error', reject);
+      });
+    }
+
+    // Transcribe the downloaded file
+    const transcription = await transcribeFile(tempFilePath, model);
+
+    // Clean up the temporary file
+    await fsPromises.unlink(tempFilePath);
+
+    return transcription;
+  } catch (error) {
+    console.error('Error in URL transcription:', error);
+    throw new Error('Failed to transcribe URL');
+  }
+}
+
+async function convertToSupportedFormat(inputPath) {
+  const outputPath = path.join(uploadsDir, `converted_${Date.now()}.mp3`);
+  return new Promise((resolve, reject) => {
+    ffmpeg(inputPath)
+      .toFormat('mp3')
+      .on('error', (err) => {
+        console.error('Error converting file:', err);
+        reject(err);
+      })
+      .on('end', () => {
+        console.log('Conversion finished');
+        resolve(outputPath);
+      })
+      .save(outputPath);
+  });
+}
+
+// Summarization route
+app.post('/api/summarize', async (req, res) => {
+  const { transcription, model } = req.body;
+  try {
+    if (!transcription) {
+      return res.status(400).json({ error: 'No transcription provided for summarization' });
+    }
+
+    const openaiResponse = await openai.chat.completions.create({
+      model: model || "gpt-3.5-turbo",
+      messages: [
+        { role: 'system', content: 'You are a helpful assistant that summarizes transcriptions.' },
+        { role: 'user', content: `Please summarize the following transcription:\n\n${transcription}` }
+      ],
+    });
+
+    const summary = openaiResponse.choices[0].message.content;
+    res.json({ summary });
+  } catch (error) {
+    console.error('Error in summarization:', error);
+    res.status(500).json({ error: 'Failed to summarize transcription', details: error.message });
   }
 });
 

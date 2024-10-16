@@ -9,11 +9,13 @@ export function initApiKeyModule() {
 
     async function loadApiKeys() {
         try {
+            console.log('Fetching API keys...');
             const response = await fetch('/api/keys');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
             apiKeys = await response.json();
+            console.log('API keys loaded successfully:', apiKeys);
             updateApiKeysList();
 
             // Check for required API keys
@@ -47,14 +49,17 @@ export function initApiKeyModule() {
             eventTarget.dispatchEvent(new Event('apiKeysUpdated'));
         } catch (error) {
             console.error('Error loading API keys:', error);
+            console.error('Error details:', error.message);
+            console.error('Error stack:', error.stack);
             apiKeysList.innerHTML = '<p>Error loading API keys. Please try refreshing the page.</p>';
+            throw error; // Re-throw the error so it can be caught by the caller
         }
     }
 
     function updateApiKeysList() {
         apiKeysList.innerHTML = apiKeys.map(key => `
             <div>
-                <span>${key.name}: ${key.value.substring(0, 5)}...</span>
+                <span>${key.name}: ${key.value ? key.value.substring(0, 5) + '...' : 'No value'}</span>
                 <button onclick="removeApiKey('${key.id}')">Remove</button>
             </div>
         `).join('');

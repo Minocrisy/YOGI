@@ -10,7 +10,7 @@ import { initNotionModule } from './js/modules/notionModule.js';
 import { initApiKeyModule } from './js/modules/apiKeyModule.js';
 import { initModelModule } from './js/modules/modelModule.js';
 import { initUsageStatsModule } from './js/modules/usageStatsModule.js';
-import videoTranscriptionModule from './js/modules/videoTranscriptionModule.js';
+import { initTranscriptionModule } from './js/modules/transcriptionModule.js';
 
 async function initializeApp() {
     try {
@@ -31,9 +31,18 @@ async function initializeApp() {
         // Initialize modules that need to load data
         try {
             await Promise.all([
-                modelModule.loadModels(),
-                apiKeyModule.loadApiKeys(),
-                usageStatsModule.loadUsageStats()
+                modelModule.loadModels().catch(error => {
+                    console.error('Error loading models:', error);
+                    return null;
+                }),
+                apiKeyModule.loadApiKeys().catch(error => {
+                    console.error('Error loading API keys:', error);
+                    return null;
+                }),
+                usageStatsModule.loadUsageStats().catch(error => {
+                    console.error('Error loading usage stats:', error);
+                    return null;
+                })
             ]);
             console.log('Initial data loaded successfully');
         } catch (dataLoadError) {
@@ -54,7 +63,7 @@ async function initializeApp() {
         const uploadModule = initUploadModule(chatModule.addMessageToChat);
         const voiceInputModule = initVoiceInputModule();
         const notionModule = initNotionModule();
-        videoTranscriptionModule.initialize();
+        const transcriptionModule = initTranscriptionModule();
         console.log('Dependent modules initialized');
 
         // Add event listeners for updates
@@ -62,36 +71,52 @@ async function initializeApp() {
         apiKeyModule.addEventListener('apiKeysUpdated', updateUIWithApiKeys);
         usageStatsModule.addEventListener('usageStatsUpdated', updateUIWithUsageStats);
 
-        // Set up event listeners for video transcription
-        const fileInput = document.querySelector('#video-transcription .file-input');
-        const transcribeButton = document.querySelector('#video-transcription .send-button');
-        const summarizeButton = document.querySelector('#video-transcription .summarize-button');
+        // Set up event listeners for transcription
+        const fileInput = document.querySelector('#transcription .file-input');
+        const linkInput = document.querySelector('#transcription .link-input');
+        const transcribeButton = document.querySelector('#transcription .send-button');
+        const summarizeButton = document.querySelector('#transcription .summarize-button');
+        const speechInput = document.querySelector('#transcription .speech-input');
 
-        if (fileInput && transcribeButton && summarizeButton) {
+        if (fileInput && linkInput && transcribeButton && summarizeButton && speechInput) {
             fileInput.addEventListener('change', (event) => {
                 const file = event.target.files[0];
                 if (file) {
                     transcribeButton.disabled = false;
+                    linkInput.value = ''; // Clear link input when file is selected
                 } else {
-                    transcribeButton.disabled = true;
-                    summarizeButton.disabled = true;
+                    transcribeButton.disabled = !linkInput.value.trim();
+                }
+            });
+
+            linkInput.addEventListener('input', (event) => {
+                const url = event.target.value.trim();
+                transcribeButton.disabled = !url && !fileInput.files[0];
+                if (url) {
+                    fileInput.value = ''; // Clear file input when link is entered
                 }
             });
 
             transcribeButton.addEventListener('click', () => {
                 const file = fileInput.files[0];
-                if (file) {
-                    const selectedModel = document.querySelector('#video-transcription .model-select').value;
-                    videoTranscriptionModule.transcribeVideo(file, selectedModel);
-                    summarizeButton.disabled = false;
+                const url = linkInput.value.trim();
+                const selectedModel = document.querySelector('#transcription .model-select').value;
+                
+                if (file || url) {
+                    transcriptionModule.handleTranscribe();
                 }
+                summarizeButton.disabled = false;
             });
 
             summarizeButton.addEventListener('click', () => {
-                videoTranscriptionModule.summarizeTranscription();
+                transcriptionModule.handleSummarize();
+            });
+
+            speechInput.addEventListener('click', () => {
+                transcriptionModule.startSpeechRecognition();
             });
         } else {
-            console.error('One or more video transcription elements not found');
+            console.error('One or more transcription elements not found');
         }
 
         console.log('All modules initialized successfully');
@@ -142,3 +167,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Delay the initialization slightly to ensure DOM is fully loaded
     setTimeout(initializeApp, 100);
 });
+
+// Add event listener for resource load errors
+window.addEventListener('error', function(e) {
+    if (e.target.tagName === 'LINK' || e.target.tagName === 'SCRIPT') {
+        console.error('Failed to load resource:', e.target.src || e.target.href);
+    }
+}, true);
