@@ -87,3 +87,4 @@ temp/
 
 # VS Code settings
 .vscode/
+uploads/*
