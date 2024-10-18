@@ -12,9 +12,6 @@
 </head>
 <body>
     <div class="app-container">
-        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
-            <i class="fas fa-bars"></i>
-        </button>
         <aside class="sidebar">
             <h1 class="app-title">YOGI</h1>
             <nav>
@@ -181,18 +178,6 @@
     <script src="app.js" type="module"></script>
     <script>
         document.getElementById('current-year').textContent = new Date().getFullYear();
-        
-        // Sidebar toggle functionality
-        const sidebarToggle = document.getElementById('sidebar-toggle');
-        const sidebar = document.querySelector('.sidebar');
-        const mainContent = document.querySelector('.main-content');
-        
-        sidebarToggle.addEventListener('click', () => {
-            sidebar.classList.toggle('collapsed');
-            mainContent.classList.toggle('expanded');
-            const isExpanded = sidebar.classList.contains('collapsed');
-            sidebarToggle.setAttribute('aria-expanded', !isExpanded);
-        });
         
         // Tab switching functionality
         const tabs = document.querySelectorAll('.tab');

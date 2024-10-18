@@ -9,10 +9,10 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 - **Vision Analysis**: Analyze and describe images using OpenAI's GPT-4o-mini or Google's Gemini 1.5 Pro Vision.
 - **Video Generation**: Generate videos from text prompts or images (currently in development).
 - **Audio Generation**: Create audio content using ElevenLabs TTS.
-- **Notion Integration**: Sync data with Notion (placeholder for future implementation).
-- **API Key Management**: Securely manage API keys for different services.
-- **Model Management**: Add, remove, and select different AI models.
-- **Usage Tracking**: Monitor API calls and associated costs.
+- **Notion Integration**: Sync data with Notion (improved interface for future implementation).
+- **API Key Management**: Securely manage API keys for different services with an enhanced user interface.
+- **Model Management**: Add, remove, and select different AI models with an improved management interface.
+- **Usage Tracking**: Monitor API calls and associated costs with a new visual representation.
 
 ## Recent Updates
 
@@ -22,6 +22,10 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 - Enhanced vision analysis capabilities, now supporting both OpenAI's GPT-4o-mini and Google's Gemini 1.5 Pro Vision.
 - Implemented audio generation functionality using ElevenLabs TTS.
 - Integrated multiple chat models (Groq, OpenAI, Anthropic, Mistral, Google).
+- Redesigned Notion Integration interface with a card-based layout and recent syncs list.
+- Revamped API Management section with separate cards for API Keys, Models, and Usage Tracking.
+- Improved overall UI consistency and visual appeal across all sections.
+- Removed sidebar toggle switch for a cleaner, more intuitive interface.
 
 ## Installation
 
@@ -58,8 +62,8 @@ YOGI is a versatile AI-powered application that integrates various generative AI
 
 ## Usage
 
-1. Select the desired tab for the type of generation you want (Chat, Image, Vision, Audio, etc.).
-2. Choose a model from the dropdown menu.
+1. Select the desired tab from the sidebar for the type of generation you want (Chat, Image, Vision, Audio, etc.).
+2. Choose a model from the dropdown menu in the selected tab.
 3. Enter your prompt or upload a file/image/audio as required.
 4. Click the generate button to receive the AI-generated response.
 
@@ -83,6 +87,21 @@ To use the vision analysis feature:
 6. A loading indicator will appear during the analysis process.
 7. Once complete, the analysis result will be displayed along with the cost of the operation.
 
+### Notion Integration
+
+The Notion Integration tab now features:
+1. A card-based layout for better organization.
+2. A "Sync with Notion" button to initiate data synchronization.
+3. A status container to display sync results.
+4. A recent syncs list to show the history of synchronization attempts.
+
+### API Management
+
+The API Management tab has been redesigned with:
+1. Separate cards for API Keys, Models, and Usage Tracking.
+2. Improved buttons for adding new API keys and models.
+3. A visual representation of usage statistics.
+
 ## Known Issues
 
 - Video generation is currently not functioning as expected. We are working on resolving issues with the Hugging Face API integration for this feature.
@@ -90,9 +109,10 @@ To use the vision analysis feature:
 ## Future Plans
 
 - Implement text-to-video generation.
-- Enhance Notion integration features.
+- Enhance Notion integration features with full synchronization capabilities.
 - Improve error handling and user experience.
 - Add support for more vision analysis models.
+- Implement full functionality for the redesigned API Management and Notion Integration sections.
 
 ## Contributing
 
