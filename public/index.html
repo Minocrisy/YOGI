@@ -12,50 +12,57 @@
 </head>
 <body>
     <div class="app-container">
+        <button id="sidebar-toggle" class="sidebar-toggle" aria-label="Toggle sidebar">
+            <i class="fas fa-bars"></i>
+        </button>
         <aside class="sidebar">
             <h1 class="app-title">YOGI</h1>
             <nav>
-                <ul class="tabs">
-                    <li><a href="#chat" class="tab active" data-tab="chat"><i class="fas fa-comments"></i> Chat</a></li>
-                    <li><a href="#image-generation" class="tab" data-tab="image-generation"><i class="fas fa-image"></i> Image Generation</a></li>
-                    <li><a href="#vision" class="tab" data-tab="vision"><i class="fas fa-eye"></i> Vision</a></li>
-                    <li><a href="#video-generation" class="tab" data-tab="video-generation"><i class="fas fa-video"></i> Video Generation</a></li>
-                    <li><a href="#audio-generation" class="tab" data-tab="audio-generation"><i class="fas fa-music"></i> Audio Generation</a></li>
-                    <li><a href="#transcription" class="tab" data-tab="transcription"><i class="fas fa-closed-captioning"></i> Transcription</a></li>
-                    <li><a href="#notion-integration" class="tab" data-tab="notion-integration"><i class="fas fa-book"></i> Notion Integration</a></li>
-                    <li><a href="#api-management" class="tab" data-tab="api-management"><i class="fas fa-cogs"></i> API Management</a></li>
+                <ul class="tabs" role="tablist">
+                    <li><a href="#chat" class="tab active" data-tab="chat" role="tab" aria-selected="true"><i class="fas fa-comments"></i> <span>Chat</span></a></li>
+                    <li><a href="#image-generation" class="tab" data-tab="image-generation" role="tab"><i class="fas fa-image"></i> <span>Image Generation</span></a></li>
+                    <li><a href="#vision" class="tab" data-tab="vision" role="tab"><i class="fas fa-eye"></i> <span>Vision</span></a></li>
+                    <li><a href="#video-generation" class="tab" data-tab="video-generation" role="tab"><i class="fas fa-video"></i> <span>Video Generation</span></a></li>
+                    <li><a href="#audio-generation" class="tab" data-tab="audio-generation" role="tab"><i class="fas fa-music"></i> <span>Audio Generation</span></a></li>
+                    <li><a href="#transcription" class="tab" data-tab="transcription" role="tab"><i class="fas fa-closed-captioning"></i> <span>Transcription</span></a></li>
+                    <li><a href="#notion-integration" class="tab" data-tab="notion-integration" role="tab"><i class="fas fa-book"></i> <span>Notion Integration</span></a></li>
+                    <li><a href="#api-management" class="tab" data-tab="api-management" role="tab"><i class="fas fa-cogs"></i> <span>API Management</span></a></li>
                 </ul>
             </nav>
         </aside>
         <main class="main-content">
-            <section id="chat" class="tab-content active">
+            <section id="chat" class="tab-content active" role="tabpanel" aria-labelledby="chat-tab">
                 <div class="controls">
                     <select class="model-select" data-type="text"></select>
                 </div>
-                <div id="chat-messages" class="messages-container"></div>
+                <div id="chat-messages" class="messages-container" aria-live="polite"></div>
                 <div class="input-container">
-                    <textarea class="user-input" placeholder="Enter your message here..."></textarea>
+                    <textarea class="user-input" placeholder="Enter your message here..." aria-label="Enter your message"></textarea>
                     <div class="input-options">
-                        <button class="option-button file-upload" title="Upload File"><i class="fas fa-paperclip"></i></button>
-                        <button class="option-button image-upload" title="Upload Image"><i class="fas fa-image"></i></button>
-                        <button class="option-button voice-input" title="Voice Input"><i class="fas fa-microphone"></i></button>
+                        <button class="option-button file-upload" title="Upload File" aria-label="Upload File"><i class="fas fa-paperclip"></i></button>
+                        <button class="option-button image-upload" title="Upload Image" aria-label="Upload Image"><i class="fas fa-image"></i></button>
+                        <button class="option-button voice-input" title="Voice Input" aria-label="Voice Input"><i class="fas fa-microphone"></i></button>
                     </div>
-                    <button class="send-button">Send</button>
+                    <button class="send-button" aria-label="Send message"><i class="fas fa-paper-plane"></i></button>
                 </div>
+                <div class="drag-drop-zone" aria-label="Drag and drop files here">
+                    <p>Drag and drop files here</p>
+                </div>
+                <div class="file-preview" aria-live="polite"></div>
             </section>
             
-            <section id="image-generation" class="tab-content">
+            <section id="image-generation" class="tab-content" role="tabpanel" aria-labelledby="image-generation-tab">
                 <div class="controls">
                     <select class="model-select" data-type="image"></select>
                 </div>
-                <div id="image-result" class="result-container"></div>
+                <div id="image-result" class="result-container gallery-view" aria-live="polite"></div>
                 <div class="input-container">
-                    <textarea class="user-input" placeholder="Describe the image you want to generate..."></textarea>
-                    <button class="send-button">Generate</button>
+                    <textarea class="user-input" placeholder="Describe the image you want to generate..." aria-label="Describe the image"></textarea>
+                    <button class="send-button" aria-label="Generate image"><i class="fas fa-magic"></i></button>
                 </div>
             </section>
             
-            <section id="vision" class="tab-content">
+            <section id="vision" class="tab-content" role="tabpanel" aria-labelledby="vision-tab">
                 <div class="controls">
                     <select class="model-select" data-type="vision">
                         <option value="meta-llama/Llama-3.2-11B-Vision-Instruct">Llama 3.2 Vision (Hugging Face)</option>
@@ -63,90 +70,175 @@
                         <option value="gemini-vision">Gemini Vision (Google - Not Implemented)</option>
                     </select>
                 </div>
-                <div id="vision-result" class="result-container"></div>
+                <div id="vision-result" class="result-container gallery-view" aria-live="polite"></div>
                 <div class="input-container">
-                    <input type="file" class="file-input" accept="image/*">
-                    <textarea class="user-input" placeholder="Enter your question about the image..."></textarea>
-                    <button class="send-button">Analyze</button>
+                    <input type="file" class="file-input" accept="image/*" aria-label="Upload image for analysis">
+                    <textarea class="user-input" placeholder="Enter your question about the image..." aria-label="Enter your question"></textarea>
+                    <button class="send-button" aria-label="Analyze image"><i class="fas fa-search"></i></button>
                 </div>
+                <div class="drag-drop-zone" aria-label="Drag and drop image here">
+                    <p>Drag and drop image here</p>
+                </div>
+                <div class="file-preview" aria-live="polite"></div>
             </section>
             
-            <section id="video-generation" class="tab-content">
+            <section id="video-generation" class="tab-content" role="tabpanel" aria-labelledby="video-generation-tab">
                 <div class="controls">
                     <select class="model-select" data-type="video"></select>
                 </div>
-                <div id="video-result" class="result-container"></div>
+                <div id="video-result" class="result-container gallery-view" aria-live="polite"></div>
                 <div class="input-container">
-                    <textarea class="user-input" placeholder="Describe the video you want to generate..."></textarea>
+                    <textarea class="user-input" placeholder="Describe the video you want to generate..." aria-label="Describe the video"></textarea>
                     <div class="input-options">
-                        <input type="file" class="image-upload" accept="image/*" title="Upload Image for Video Generation">
+                        <input type="file" class="image-upload" accept="image/*" title="Upload Image for Video Generation" aria-label="Upload Image for Video Generation">
                     </div>
-                    <button class="send-button">Generate</button>
+                    <button class="send-button" aria-label="Generate video"><i class="fas fa-film"></i></button>
                 </div>
+                <div class="drag-drop-zone" aria-label="Drag and drop image for video generation here">
+                    <p>Drag and drop image for video generation here</p>
+                </div>
+                <div class="file-preview" aria-live="polite"></div>
             </section>
             
-            <section id="audio-generation" class="tab-content">
+            <section id="audio-generation" class="tab-content" role="tabpanel" aria-labelledby="audio-generation-tab">
                 <div class="controls">
                     <select class="model-select" data-type="audio"></select>
                 </div>
-                <div id="audio-result" class="result-container"></div>
+                <div id="audio-result" class="result-container" aria-live="polite"></div>
                 <div class="input-container">
-                    <textarea class="user-input" placeholder="Describe the audio you want to generate..."></textarea>
-                    <button class="send-button">Generate</button>
+                    <textarea class="user-input" placeholder="Describe the audio you want to generate..." aria-label="Describe the audio"></textarea>
+                    <button class="send-button" aria-label="Generate audio"><i class="fas fa-music"></i></button>
                 </div>
             </section>
             
-            <section id="transcription" class="tab-content">
+            <section id="transcription" class="tab-content" role="tabpanel" aria-labelledby="transcription-tab">
                 <div class="controls">
                     <select class="model-select" data-type="transcription"></select>
                 </div>
-                <div id="transcription-result" class="result-container">
+                <div id="transcription-result" class="result-container" aria-live="polite">
                     <div id="transcription-display"></div>
                     <div id="summary-display"></div>
                 </div>
                 <div class="input-container">
                     <div class="input-options">
-                        <button class="option-button speech-input" title="Speech Input"><i class="fas fa-microphone"></i></button>
-                        <input type="file" class="file-input" accept="audio/*,video/*">
-                        <input type="text" class="link-input" placeholder="Enter URL to transcribe">
+                        <button class="option-button speech-input" title="Speech Input" aria-label="Speech Input"><i class="fas fa-microphone"></i></button>
+                        <input type="file" class="file-input" accept="audio/*,video/*" aria-label="Upload audio or video file">
+                        <input type="text" class="link-input" placeholder="Enter URL to transcribe" aria-label="Enter URL to transcribe">
                     </div>
-                    <button class="send-button">Transcribe</button>
-                    <button class="summarize-button">Summarize</button>
+                    <button class="send-button" aria-label="Transcribe"><i class="fas fa-closed-captioning"></i></button>
+                    <button class="summarize-button" aria-label="Summarize"><i class="fas fa-compress-alt"></i></button>
                 </div>
+                <div class="drag-drop-zone" aria-label="Drag and drop audio or video file here">
+                    <p>Drag and drop audio or video file here</p>
+                </div>
+                <div class="file-preview" aria-live="polite"></div>
             </section>
             
-            <section id="notion-integration" class="tab-content">
+            <section id="notion-integration" class="tab-content" role="tabpanel" aria-labelledby="notion-integration-tab">
                 <h2>Notion Integration</h2>
                 <p>Sync your YOGI data with Notion:</p>
-                <button id="sync-notion" class="action-button">Sync with Notion</button>
-                <div id="notion-status" class="status-container"></div>
+                <button id="sync-notion" class="action-button" aria-label="Sync with Notion">Sync with Notion</button>
+                <div id="notion-status" class="status-container" aria-live="polite"></div>
             </section>
             
-            <section id="api-management" class="tab-content">
+            <section id="api-management" class="tab-content" role="tabpanel" aria-labelledby="api-management-tab">
                 <h2>API Management</h2>
                 <div id="api-keys" class="management-section">
                     <h3>API Keys</h3>
-                    <div id="api-keys-list" class="list-container"></div>
-                    <button id="add-api-key" class="action-button">Add New API Key</button>
+                    <div id="api-keys-list" class="list-container" aria-live="polite"></div>
+                    <button id="add-api-key" class="action-button" aria-label="Add New API Key">Add New API Key</button>
                 </div>
                 <div id="models" class="management-section">
                     <h3>Models</h3>
-                    <div id="models-list" class="list-container"></div>
-                    <button id="add-model" class="action-button">Add New Model</button>
+                    <div id="models-list" class="list-container" aria-live="polite"></div>
+                    <button id="add-model" class="action-button" aria-label="Add New Model">Add New Model</button>
                 </div>
                 <div id="usage-tracking" class="management-section">
                     <h3>Usage Tracking</h3>
-                    <div id="usage-stats" class="stats-container"></div>
+                    <div id="usage-stats" class="stats-container" aria-live="polite"></div>
                 </div>
             </section>
         </main>
     </div>
+    <div id="error-notification" class="error-notification" aria-live="assertive"></div>
     <footer>
         <p>&copy; <span id="current-year"></span> YOGI. All rights reserved.</p>
     </footer>
     <script src="app.js" type="module"></script>
     <script>
         document.getElementById('current-year').textContent = new Date().getFullYear();
+        
+        // Sidebar toggle functionality
+        const sidebarToggle = document.getElementById('sidebar-toggle');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.querySelector('.main-content');
+        
+        sidebarToggle.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            const isExpanded = sidebar.classList.contains('collapsed');
+            sidebarToggle.setAttribute('aria-expanded', !isExpanded);
+        });
+        
+        // Tab switching functionality
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabs.forEach(tab => {
+            tab.addEventListener('click', (e) => {
+                e.preventDefault();
+                const targetId = tab.getAttribute('href').substring(1);
+                
+                tabs.forEach(t => t.classList.remove('active'));
+                tabContents.forEach(content => content.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(targetId).classList.add('active');
+            });
+        });
+        
+        // Drag and drop functionality
+        const dragDropZones = document.querySelectorAll('.drag-drop-zone');
+        
+        dragDropZones.forEach(zone => {
+            zone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                zone.classList.add('drag-over');
+            });
+            
+            zone.addEventListener('dragleave', () => {
+                zone.classList.remove('drag-over');
+            });
+            
+            zone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                zone.classList.remove('drag-over');
+                // Handle file drop here
+            });
+        });
+
+        // Keyboard navigation for tabs
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+                    e.preventDefault();
+                    const direction = e.key === 'ArrowRight' ? 1 : -1;
+                    const nextIndex = (index + direction + tabs.length) % tabs.length;
+                    tabs[nextIndex].focus();
+                    tabs[nextIndex].click();
+                }
+            });
+        });
+
+        // Error notification
+        function showError(message) {
+            const errorNotification = document.getElementById('error-notification');
+            errorNotification.textContent = message;
+            errorNotification.classList.add('show');
+            setTimeout(() => {
+                errorNotification.classList.remove('show');
+            }, 5000);
+        }
     </script>
 </body>
 </html>
