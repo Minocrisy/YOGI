@@ -3,14 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#222831">
     <title>YOGI - Your Own Generative Interface</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
     <div class="app-container">
         <aside class="sidebar">
-            <h1>YOGI</h1>
+            <h1 class="app-title">YOGI</h1>
             <nav>
                 <ul class="tabs">
                     <li><a href="#chat" class="tab active" data-tab="chat"><i class="fas fa-comments"></i> Chat</a></li>
@@ -29,7 +32,7 @@
                 <div class="controls">
                     <select class="model-select" data-type="text"></select>
                 </div>
-                <div id="chat-messages"></div>
+                <div id="chat-messages" class="messages-container"></div>
                 <div class="input-container">
                     <textarea class="user-input" placeholder="Enter your message here..."></textarea>
                     <div class="input-options">
@@ -45,7 +48,7 @@
                 <div class="controls">
                     <select class="model-select" data-type="image"></select>
                 </div>
-                <div id="image-result"></div>
+                <div id="image-result" class="result-container"></div>
                 <div class="input-container">
                     <textarea class="user-input" placeholder="Describe the image you want to generate..."></textarea>
                     <button class="send-button">Generate</button>
@@ -60,7 +63,7 @@
                         <option value="gemini-vision">Gemini Vision (Google - Not Implemented)</option>
                     </select>
                 </div>
-                <div id="vision-result"></div>
+                <div id="vision-result" class="result-container"></div>
                 <div class="input-container">
                     <input type="file" class="file-input" accept="image/*">
                     <textarea class="user-input" placeholder="Enter your question about the image..."></textarea>
@@ -72,7 +75,7 @@
                 <div class="controls">
                     <select class="model-select" data-type="video"></select>
                 </div>
-                <div id="video-result"></div>
+                <div id="video-result" class="result-container"></div>
                 <div class="input-container">
                     <textarea class="user-input" placeholder="Describe the video you want to generate..."></textarea>
                     <div class="input-options">
@@ -86,7 +89,7 @@
                 <div class="controls">
                     <select class="model-select" data-type="audio"></select>
                 </div>
-                <div id="audio-result"></div>
+                <div id="audio-result" class="result-container"></div>
                 <div class="input-container">
                     <textarea class="user-input" placeholder="Describe the audio you want to generate..."></textarea>
                     <button class="send-button">Generate</button>
@@ -97,7 +100,7 @@
                 <div class="controls">
                     <select class="model-select" data-type="transcription"></select>
                 </div>
-                <div id="transcription-result">
+                <div id="transcription-result" class="result-container">
                     <div id="transcription-display"></div>
                     <div id="summary-display"></div>
                 </div>
@@ -115,32 +118,35 @@
             <section id="notion-integration" class="tab-content">
                 <h2>Notion Integration</h2>
                 <p>Sync your YOGI data with Notion:</p>
-                <button id="sync-notion">Sync with Notion</button>
-                <div id="notion-status"></div>
+                <button id="sync-notion" class="action-button">Sync with Notion</button>
+                <div id="notion-status" class="status-container"></div>
             </section>
             
             <section id="api-management" class="tab-content">
                 <h2>API Management</h2>
-                <div id="api-keys">
+                <div id="api-keys" class="management-section">
                     <h3>API Keys</h3>
-                    <div id="api-keys-list"></div>
-                    <button id="add-api-key">Add New API Key</button>
+                    <div id="api-keys-list" class="list-container"></div>
+                    <button id="add-api-key" class="action-button">Add New API Key</button>
                 </div>
-                <div id="models">
+                <div id="models" class="management-section">
                     <h3>Models</h3>
-                    <div id="models-list"></div>
-                    <button id="add-model">Add New Model</button>
+                    <div id="models-list" class="list-container"></div>
+                    <button id="add-model" class="action-button">Add New Model</button>
                 </div>
-                <div id="usage-tracking">
+                <div id="usage-tracking" class="management-section">
                     <h3>Usage Tracking</h3>
-                    <div id="usage-stats"></div>
+                    <div id="usage-stats" class="stats-container"></div>
                 </div>
             </section>
         </main>
     </div>
     <footer>
-        <p>&copy; 2024 YOGI. All rights reserved.</p>
+        <p>&copy; <span id="current-year"></span> YOGI. All rights reserved.</p>
     </footer>
     <script src="app.js" type="module"></script>
+    <script>
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+    </script>
 </body>
 </html>
