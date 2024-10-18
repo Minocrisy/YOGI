@@ -359,6 +359,116 @@ body {
     justify-content: center;
 }
 
+/* New styles for Notion Integration and API Management tabs */
+.card {
+    background-color: var(--secondary-color);
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-button {
+    background-color: var(--primary-color);
+    color: var(--text-color);
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.action-button i {
+    margin-right: 6px;
+}
+
+.action-button:hover, .action-button:focus {
+    background-color: #00828A;
+    transform: translateY(-2px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    outline: none;
+}
+
+.list-container {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+.status-container {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    padding: 10px;
+    margin-top: 10px;
+}
+
+#notion-integration h2,
+#api-management h2 {
+    font-size: 1.2rem;
+    margin-bottom: 15px;
+}
+
+#notion-integration .card,
+#api-management .card {
+    margin-bottom: 20px;
+}
+
+#notion-integration .card h3,
+#api-management .card h3 {
+    font-size: 1rem;
+    margin-bottom: 10px;
+}
+
+#sync-history,
+#api-keys-list,
+#models-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+}
+
+#sync-history li,
+#api-keys-list li,
+#models-list li {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+#sync-history li:last-child,
+#api-keys-list li:last-child,
+#models-list li:last-child {
+    border-bottom: none;
+}
+
+#usage-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 10px;
+}
+
+.stat-item {
+    background-color: rgba(255,255,255,0.05);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+}
+
+.stat-item .stat-value {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.stat-item .stat-label {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.7);
+}
+
 footer {
     background-color: var(--secondary-color);
     color: var(--text-color);

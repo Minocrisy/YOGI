@@ -136,24 +136,38 @@
             
             <section id="notion-integration" class="tab-content" role="tabpanel" aria-labelledby="notion-integration-tab">
                 <h2>Notion Integration</h2>
-                <p>Sync your YOGI data with Notion:</p>
-                <button id="sync-notion" class="action-button" aria-label="Sync with Notion">Sync with Notion</button>
+                <div class="card">
+                    <p>Sync your YOGI data with Notion:</p>
+                    <button id="sync-notion" class="action-button" aria-label="Sync with Notion">
+                        <i class="fas fa-sync-alt"></i> Sync with Notion
+                    </button>
+                </div>
                 <div id="notion-status" class="status-container" aria-live="polite"></div>
+                <div class="card">
+                    <h3>Recent Syncs</h3>
+                    <ul id="sync-history" class="list-container">
+                        <!-- Sync history will be dynamically populated here -->
+                    </ul>
+                </div>
             </section>
             
             <section id="api-management" class="tab-content" role="tabpanel" aria-labelledby="api-management-tab">
                 <h2>API Management</h2>
-                <div id="api-keys" class="management-section">
+                <div id="api-keys" class="card">
                     <h3>API Keys</h3>
                     <div id="api-keys-list" class="list-container" aria-live="polite"></div>
-                    <button id="add-api-key" class="action-button" aria-label="Add New API Key">Add New API Key</button>
+                    <button id="add-api-key" class="action-button" aria-label="Add New API Key">
+                        <i class="fas fa-plus"></i> Add New API Key
+                    </button>
                 </div>
-                <div id="models" class="management-section">
+                <div id="models" class="card">
                     <h3>Models</h3>
                     <div id="models-list" class="list-container" aria-live="polite"></div>
-                    <button id="add-model" class="action-button" aria-label="Add New Model">Add New Model</button>
+                    <button id="add-model" class="action-button" aria-label="Add New Model">
+                        <i class="fas fa-plus"></i> Add New Model
+                    </button>
                 </div>
-                <div id="usage-tracking" class="management-section">
+                <div id="usage-tracking" class="card">
                     <h3>Usage Tracking</h3>
                     <div id="usage-stats" class="stats-container" aria-live="polite"></div>
                 </div>
